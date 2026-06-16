@@ -3,8 +3,6 @@
 
 const PORT = process.env.PORT ?? 3001;
 
-const server = Bun?.serve ?? null;
-
 // Usando HTTP nativo (sem dependências) para o placeholder
 import { createServer } from 'node:http';
 
