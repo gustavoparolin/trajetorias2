@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Trajetoria {
+  cod               Int               @id
+  nome              String            @db.VarChar(200)
+  sigla             String            @db.VarChar(10)
+  sePublicadaSite   Boolean           @default(false)
+  dthoraIniVigencia DateTime          @db.Date
+  dthoraFimVigencia DateTime?         @db.Date
+  niveis            TrajetoriaNivel[]
+
+  @@map("trajetoria")
+}
+
+model TrajetoriaNivel {
+  cod                Int        @id
+  codTrajetoria      Int
+  indNivelTrajetoria Int
+  descr              String     @db.Text
+  dthoraIniVigencia  DateTime   @db.Date
+  dthoraFimVigencia  DateTime?  @db.Date
+  trajetoria         Trajetoria @relation(fields: [codTrajetoria], references: [cod])
+
+  @@map("trajetoria_nivel")
+}
