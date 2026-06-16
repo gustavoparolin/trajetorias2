@@ -1,31 +1,30 @@
 <!--
-Sync Impact Report
-==================
-Version change: (new) → 1.0.0
-Added principles: I. Spec-First, II. Approval-Gated, III. Test-First, IV. Portuguese-First, V. Simplicity
-Added sections: Stack & Deployment, Development Workflow, Governance
-Templates updated: plan-template.md ✅, spec-template.md ✅, tasks-template.md ✅
-Deferred TODOs: none
+Relatório de Sincronização
+==========================
+Mudança de versão: 1.1.0 → 1.2.0
+Alterações: tradução completa para PT-BR
+Templates atualizados: plano-template.md ✅, spec-template.md ✅, tarefas-template.md ✅
+Pendências: nenhuma
 -->
 
-# Trajetórias 2.0 — Constitution
+# Trajetórias 2.0 — Constituição
 
-## Core Principles
+## Princípios Fundamentais
 
-### I. Spec-First (NON-NEGOTIABLE)
-Every feature MUST start as a spec-kit specification before any code is written.
-The sequence is always: spec → clarify → plan → tasks → GitHub Issue (approved) → implement.
-No issue may be opened without a corresponding spec artifact in `specs/`.
-No implementation may begin without the issue carrying the `approved` label.
+### I. Especificação Primeiro (INEGOCIÁVEL)
+Toda funcionalidade DEVE começar como uma especificação spec-kit antes de qualquer código ser escrito.
+A sequência é sempre: spec → clarificação → plano → tarefas → Issue no GitHub (aprovado) → implementação.
+Nenhum Issue pode ser aberto sem um artefato de spec correspondente em `specs/` — exceto pelo Caminho B (veja Princípio II).
+Nenhuma implementação pode começar sem o Issue carregar o label `aprovado`.
 
-### II. Desenvolvimento Controlado por Aprovação (NON-NEGOTIABLE)
+### II. Desenvolvimento Controlado por Aprovação (INEGOCIÁVEL)
 O agente IA DEVE implementar apenas Issues com label `aprovado`.
 
 Dois caminhos válidos:
 
-**Caminho A — Spec-First**: spec-kit gera spec → Issues criados → owner adiciona `aprovado` → agente implementa.
+**Caminho A — Spec-First** (time técnico): spec-kit gera spec → Issues criados → responsável adiciona `aprovado` → agente implementa.
 
-**Caminho B — Issue-First**: humano cria Issue no GitHub → owner adiciona `aprovado` → agente cria spec a partir do Issue → agente implementa.
+**Caminho B — Issue-First** (qualquer membro do time): humano cria Issue no GitHub descrevendo o que quer → responsável adiciona `aprovado` → agente cria a spec a partir do Issue → agente implementa.
 
 Em ambos os casos:
 1. Agente lê Issue com label `aprovado`, adiciona label `em-andamento`
@@ -33,82 +32,82 @@ Em ambos os casos:
 3. Agente cria branch `feat/issue-N-descricao`, implementa
 4. Agente executa `npm test` e `npx playwright test` — falha = não abre PR
 5. Agente abre PR com `Closes #N`, aguarda revisão
-6. Owner revisa e mergeia; Issue fecha automaticamente
+6. Responsável revisa e mergeia; Issue fecha automaticamente
 
-Issues sem label `aprovado` DEVEM ser ignorados pelo agente, mesmo se solicitado explicitamente.
+Issues sem label `aprovado` DEVEM ser ignorados pelo agente, mesmo se solicitado explicitamente durante a sessão.
 
-### III. Test-First (NON-NEGOTIABLE)
-Tests MUST be written before implementation is considered complete.
-- Every business function: Vitest unit test with edge cases
-- Every user journey defined in the spec: Playwright E2E test (golden path + primary error)
-- CI (GitHub Actions) MUST be green before any PR is opened
-- The AI agent MUST run `npm test` and `npx playwright test` before opening a PR
-- A PR that causes any test to fail MUST NOT be merged
+### III. Testes Primeiro (INEGOCIÁVEL)
+Testes DEVEM ser escritos antes de a implementação ser considerada completa.
+- Toda função de negócio: teste unitário Vitest com casos de borda
+- Toda jornada de usuário definida na spec: teste E2E Playwright (caminho feliz + erro principal)
+- A integração contínua DEVE estar verde antes de qualquer PR ser aberto
+- O agente IA DEVE executar `npm test` e `npx playwright test` antes de abrir um PR
+- Um PR que cause falha em qualquer teste NÃO DEVE ser mergeado
 
-### IV. Português-Primeiro
+### IV. Português Primeiro
 Todo conteúdo visível ao usuário DEVE estar em Português Brasileiro (PT-BR):
-- Labels da UI, mensagens, toasts, textos de erro
+- Labels de interface, mensagens, toasts, textos de erro
 - Títulos e descrições de Issues no GitHub
 - Labels do repositório (`aprovado`, `em-andamento`, `historia-usuario`, etc.)
 - Mensagens de commit (convencional: `feat(#N): descrição`)
 - Títulos e descrições de PRs
 - Comentários de código (quando necessário)
 
-Identificadores internos (nomes de variáveis, funções, rotas de API) PODEM ser em PT-BR ou inglês.
+Identificadores internos (nomes de variáveis, funções, rotas de API) PODEM estar em PT-BR ou inglês.
 
-### V. Simplicity — YAGNI
-Implement exactly what the approved issue specifies. No more.
-- No features beyond the issue scope
-- No premature abstractions (three similar lines > one abstraction)
-- No backwards-compatibility shims for code that hasn't shipped yet
-- No error handling for scenarios that cannot happen
-- Complexity MUST be justified in the issue or plan; unjustified complexity is a reason to reject a PR
+### V. Simplicidade — Não implemente o que não foi pedido
+Implemente exatamente o que o Issue aprovado especifica. Nada além.
+- Nenhuma funcionalidade além do escopo do Issue
+- Nenhuma abstração prematura (três linhas parecidas > uma abstração desnecessária)
+- Nenhum código de retrocompatibilidade para código que ainda não foi entregue
+- Nenhum tratamento de erro para cenários que não podem ocorrer
+- Complexidade DEVE ser justificada no Issue ou no plano; complexidade injustificada é motivo para rejeitar um PR
 
-## Stack & Deployment
+## Pilha Tecnológica e Infraestrutura
 
-| Layer | Technology | Notes |
-|-------|-----------|-------|
+| Camada | Tecnologia | Observações |
+|--------|-----------|-------------|
 | Backend | Node.js 22 + TypeScript + Fastify + Prisma | `packages/api/` |
 | Frontend | React 18 + TypeScript + Vite + Tailwind CSS | `packages/web/` |
-| Database | PostgreSQL (Coolify, internal) | Schema in `prisma/schema.prisma` |
-| Unit tests | Vitest | Co-located with source files |
-| E2E tests | Playwright | `e2e/*.spec.ts` |
-| API deploy | Coolify + Nixpacks | `api-trajetorias2.parolin.net` |
-| Web deploy | Cloudflare Pages | `trajetorias2.parolin.net` |
-| Storage | Cloudflare R2 | Post-MVP only |
-| Routing | Cloudflare Tunnel → Traefik | `https://localhost:443` with `noTLSVerify` |
+| Banco de dados | PostgreSQL (Coolify, interno) | Schema em `prisma/schema.prisma` |
+| Testes unitários | Vitest | Junto aos arquivos de código |
+| Testes E2E | Playwright | `e2e/*.spec.ts` |
+| Deploy da API | Coolify + Nixpacks | `api-trajetorias2.parolin.net` |
+| Deploy do frontend | Cloudflare Pages | `trajetorias2.parolin.net` |
+| Arquivos | Cloudflare R2 | Pós-MVP (evidências) |
+| Roteamento | Cloudflare Tunnel → Traefik | `https://localhost:443` com `noTLSVerify` |
 
-Environment variables are never committed. Secrets live in Coolify's Environment Variables tab.
-`seed/oracle-exports/*.csv` is gitignored — never commit Oracle production data.
+Variáveis de ambiente nunca são commitadas. Segredos ficam na aba de Variáveis de Ambiente do Coolify.
+`seed/oracle-exports/*.csv` está no `.gitignore` — nunca commitar dados de produção Oracle.
 
-## Development Workflow
+## Fluxo de Desenvolvimento
 
 ```
 Caminho A — Spec-First:
 1. /speckit.specify       → cria specs/NNN-nome/spec.md
-2. /speckit.clarify       → resolve ambiguidades na spec.md
-3. /speckit.checklist     → valida qualidade da spec (gate)
+2. /speckit.clarify       → resolve ambiguidades na spec
+3. /speckit.checklist     → valida qualidade da spec (portão de qualidade)
 4. /speckit.plan          → cria specs/NNN-nome/plano.md
 5. /speckit.tasks         → cria specs/NNN-nome/tarefas.md
 6. /speckit.taskstoissues → cria Issues no GitHub a partir das tarefas
-7. Owner revisa Issues → adiciona label `aprovado`
+7. Responsável revisa Issues → adiciona label `aprovado`
 8. /speckit.implement     → agente implementa, testa, abre PR
-9. Owner revisa PR → mergeia → Issue fecha
+9. Responsável revisa PR → mergeia → Issue fecha
 
 Caminho B — Issue-First:
-1. Humano cria Issue no GitHub descrevendo o que quer
-2. Owner adiciona label `aprovado`
+1. Membro do time cria Issue no GitHub descrevendo o que quer
+2. Responsável adiciona label `aprovado`
 3. /speckit.implement     → agente cria spec + implementa + testa + abre PR
-4. Owner revisa PR → mergeia → Issue fecha
+4. Responsável revisa PR → mergeia → Issue fecha
 ```
 
-### Branch naming
+### Nomenclatura de branches
 ```
-feat/issue-N-short-description-in-kebab
-fix/issue-N-short-description
+feat/issue-N-descricao-curta-em-kebab
+fix/issue-N-descricao-curta
 ```
 
-### Commit format
+### Formato de commit
 ```
 feat(#N): descrição curta em PT-BR
 
@@ -119,28 +118,28 @@ Closes #N
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 ```
 
-### PR format
+### Formato de PR
 ```markdown
 ## Resumo
-- Bullet points do que mudou
+- Pontos do que mudou
 
 ## Como testar
 - [ ] Passos para verificar
 
 ## Critérios de aceite
-- [ ] (copiados do issue)
+- [ ] (copiados do Issue)
 
 Closes #N
 ```
 
-## Governance
+## Governança
 
-- This constitution supersedes all other practices and instructions
-- Amendments require: new spec → discussion → ratification → version bump + date update
-- The AI agent MUST verify compliance with all five principles before opening any PR
-- MAJOR version: principle removed or fundamentally redefined
-- MINOR version: new principle or section added
-- PATCH version: clarifications, wording, non-semantic fixes
-- All PRs must reference the issue they close; PRs without an issue reference are not allowed
+- Esta constituição tem precedência sobre todas as outras práticas e instruções
+- Alterações requerem: discussão → ratificação → incremento de versão + atualização de data
+- O agente IA DEVE verificar conformidade com os cinco princípios antes de abrir qualquer PR
+- Versão MAIOR: princípio removido ou redefinido de forma incompatível
+- Versão MENOR: novo princípio ou seção adicionados
+- Versão PATCH: clarificações, redação, correções sem impacto semântico
+- Todo PR DEVE referenciar o Issue que fecha; PRs sem referência de Issue não são permitidos
 
-**Versão**: 1.1.0 | **Ratificado**: 2026-06-16 | **Última alteração**: 2026-06-16
+**Versão**: 1.2.0 | **Ratificado**: 2026-06-16 | **Última alteração**: 2026-06-16
