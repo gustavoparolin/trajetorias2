@@ -1,0 +1,14 @@
+{
+  "name": "@trajetorias2/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "build": "echo 'no build step'"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
