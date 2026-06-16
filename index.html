@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Trajetórias 2.0 — ISC / TCU</title>
   <meta name="description" content="Nova geração do Sistema de Gestão de Trajetórias Profissionais do TCU, reconstruído com stack moderno e foco em experiência de uso.">
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/logo/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/logo/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
@@ -65,19 +68,12 @@
       display: flex; align-items: center; justify-content: space-between;
       height: 64px;
     }
-    .logo-area {
-      display: flex; align-items: center; gap: 12px;
+    .logo-badge {
+      display: flex; align-items: center;
+      text-decoration: none; transition: opacity .2s;
     }
-    .logo-t2 {
-      width: 36px; height: 36px;
-      background: linear-gradient(135deg, var(--navy3) 0%, var(--green) 50%, var(--gold) 100%);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 900; font-size: 16px; color: white; letter-spacing: -.02em;
-    }
-    .logo-name { font-weight: 700; font-size: 15px; color: var(--white); }
-    .logo-name span { color: var(--gold); }
-    .logo-sub { font-size: 11px; color: #8CA0C4; font-weight: 400; }
+    .logo-badge:hover { opacity: .8; }
+    .logo-badge img { height: 38px; width: auto; display: block; }
 
     nav { display: flex; align-items: center; gap: 24px; }
     nav a {
@@ -125,6 +121,11 @@
       background-size: 60px 60px;
     }
     .hero-content { position: relative; max-width: 820px; }
+    .hero-logo-h {
+      width: min(460px, 82vw); height: auto;
+      display: block; margin: 0 auto 36px;
+      filter: drop-shadow(0 6px 28px rgba(240,180,0,.22)) drop-shadow(0 2px 10px rgba(0,0,0,.4));
+    }
     .hero-tag {
       display: inline-flex; align-items: center; gap: 8px;
       padding: 6px 14px; border-radius: 999px;
@@ -278,6 +279,47 @@
     .tl-tags   { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
     .tl-tag    { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,.06); color: #94A3B8; }
 
+    /* ── Spec-kit ───────────────────────────────────── */
+    .speckit-hero {
+      display: flex; align-items: flex-start; gap: 40px; flex-wrap: wrap;
+      padding: 32px; border-radius: 16px; margin: 40px 0 24px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(240,180,0,.2);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    .speckit-gh-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 999px;
+      background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+      font-size: 11px; color: #94A3B8; font-weight: 600; letter-spacing: .04em;
+      margin-bottom: 12px;
+    }
+    .speckit-name {
+      font-size: 36px; font-weight: 900; letter-spacing: -.03em; line-height: 1;
+      color: var(--white); margin-bottom: 14px;
+    }
+    .speckit-name em { color: var(--gold); font-style: normal; }
+    .speckit-desc { font-size: 14px; color: #64748B; line-height: 1.7; }
+    .speckit-desc strong { color: #94A3B8; }
+    .speckit-col-title {
+      font-size: 11px; font-weight: 700; color: #475569;
+      text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px;
+    }
+    .steps-list { display: flex; flex-direction: column; gap: 10px; }
+    .step-row {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 10px 14px; border-radius: 8px;
+      background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+    }
+    .step-num {
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+      background: var(--navy3); border: 1px solid rgba(240,180,0,.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: var(--gold);
+    }
+    .step-txt strong { font-size: 13px; font-weight: 700; display: block; margin-bottom: 2px; }
+    .step-txt span   { font-size: 12px; color: #64748B; }
+
     /* ── CTA final ──────────────────────────────────── */
     .cta-section {
       text-align: center; padding: 96px 24px;
@@ -313,15 +355,12 @@
 
 <!-- Header -->
 <header>
-  <div class="logo-area">
-    <div class="logo-t2">T²</div>
-    <div>
-      <div class="logo-name">Trajetórias <span>2.0</span></div>
-      <div class="logo-sub">ISC / TCU · Sistema de Gestão de Trajetórias Profissionais</div>
-    </div>
-  </div>
+  <a href="#inicio" class="logo-badge">
+    <img src="assets/logo/logo-t2-horizontal.png" alt="Trajetórias 2.0">
+  </a>
   <nav>
     <a href="#problema">Problema</a>
+    <a href="#speckit">Spec-kit</a>
     <a href="#jornadas">Jornadas</a>
     <a href="#roadmap">Roadmap</a>
     <a href="https://github.com/gustavoparolin/trajetorias2" class="btn-github" target="_blank">
@@ -337,12 +376,8 @@
   <div class="hero-grid"></div>
   <div class="hero-cursor" id="heroCursor"></div>
   <div class="hero-content">
+    <img src="assets/logo/logo-t2-horizontal.png" alt="Trajetórias 2.0" class="hero-logo-h">
     <div class="hero-tag">Em construção · MVP Sprint 1</div>
-    <h1>
-      <span class="t-traj">Trajetórias</span>
-      <span class="t-num">2.0</span>
-      <span class="t-isc">Instituto Serzedello Corrêa · Tribunal de Contas da União</span>
-    </h1>
     <p class="hero-desc">
       Sistema moderno de gestão de trajetórias profissionais para servidores do TCU.
       Construído com spec-kit, orientado por User Stories e desenvolvido com apoio de IA.
@@ -389,7 +424,7 @@
     <div class="problem-card card-red">
       <div class="card-icon">⚠️</div>
       <h3>Oracle APEX 18 — legado</h3>
-      <p>143 telas, 33 inconsistências documentadas, bug crítico que homologa servidores ao abrir uma página. PL/SQL com ~9.000 linhas distribuídas em 3 pacotes sem testes.</p>
+      <p>143 telas, 33 inconsistências documentadas, bug crítico que homologa servidores ao abrir uma página. PL/SQL com ~9.000 linhas distribuídas em 3 pacotes.</p>
     </div>
     <div class="problem-card card-blue">
       <div class="card-icon">🗺</div>
@@ -411,12 +446,73 @@
 
 <hr class="divider">
 
+<!-- Spec-kit -->
+<section id="speckit">
+  <div class="section-label">Metodologia</div>
+  <h2 class="section-title">Construído com spec-kit</h2>
+  <p class="section-sub">O framework de especificação de produto do GitHub — para pensar antes de codificar.</p>
+
+  <div class="speckit-hero">
+    <!-- Coluna esquerda: O que é -->
+    <div style="flex:1;min-width:260px">
+      <a href="https://github.com/github/spec-kit" target="_blank" class="speckit-gh-tag">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.37.6.1.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.54-1.38-1.33-1.75-1.33-1.75-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.49 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.04.13 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.69.83.57C20.57 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        github/spec-kit — ver no GitHub ↗
+      </a>
+      <div class="speckit-name">spec<em>-</em>kit</div>
+      <p class="speckit-desc">
+        Template de especificação criado pelo time de produto do GitHub.
+        Define uma estrutura padrão para documentar funcionalidades <em>antes</em> de implementá-las:<br><br>
+        <strong>Problema → Objetivos → Não-objetivos → User Stories → Requisitos → Perguntas abertas</strong>
+        <br><br>
+        O resultado é um documento que pode ser revisado como um PR, discutido em issues e
+        referenciado para sempre no histórico do repositório.
+      </p>
+    </div>
+
+    <!-- Coluna direita: Por que usamos -->
+    <div style="flex:1;min-width:260px">
+      <div class="speckit-col-title">Por que usamos neste projeto</div>
+      <p class="speckit-desc" style="margin-bottom:20px">
+        O APEX 18 original tem 143 telas mas <strong>zero documentação de requisitos</strong>.
+        Cada funcionalidade precisou ser descoberta por engenharia reversa.
+        No Trajetórias 2.0 fazemos o oposto: toda funcionalidade começa escrita e aprovada
+        <em>antes</em> de qualquer código.
+      </p>
+      <div class="steps-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-txt"><strong>Escreva o spec</strong><span>PRD no formato spec-kit · revisado em PR pelo time</span></div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-txt"><strong>Abra o Issue como User Story</strong><span>"Como [ator], quero [ação], para que [benefício]"</span></div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-txt"><strong>IA implementa e testa</strong><span>Implementa → roda testes unitários (Vitest) + E2E (Playwright) → só abre PR se passar</span></div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-txt"><strong>Time revisa e aprova</strong><span>Code review no PR · merge só com CI verde · issue fechado automaticamente</span></div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">★</div>
+          <div class="step-txt"><strong>Nada vai a produção sem teste</strong><span>Cada funcionalidade tem critérios de aceite verificáveis antes do deploy</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
 <!-- Stack -->
 <div class="stack-section">
   <section>
     <div class="section-label">Tecnologia</div>
     <h2 class="section-title">Stack moderna, infraestrutura própria</h2>
-    <p class="section-sub">Tudo rodando no VPS Oracle do ISC — sem custos de nuvem proprietária, sem lock-in.</p>
+    <p class="section-sub">Tudo rodando no VPS Oracle do Gustavo — sem custos de nuvem proprietária, sem lock-in.</p>
     <div class="stack-grid">
       <div class="stack-card"><span class="icon">⚛️</span><div><div class="name">React 18 + Vite</div><div class="role">Interface do usuário</div></div></div>
       <div class="stack-card"><span class="icon">🎨</span><div><div class="name">Tailwind CSS</div><div class="role">Design System / Dark mode</div></div></div>
@@ -426,6 +522,8 @@
       <div class="stack-card"><span class="icon">🔺</span><div><div class="name">Prisma ORM</div><div class="role">Migrations + type-safe queries</div></div></div>
       <div class="stack-card"><span class="icon">☁️</span><div><div class="name">Cloudflare Pages</div><div class="role">Frontend global</div></div></div>
       <div class="stack-card"><span class="icon">🚢</span><div><div class="name">Coolify + Docker</div><div class="role">Deploy da API no VPS</div></div></div>
+      <div class="stack-card"><span class="icon">🧪</span><div><div class="name">Vitest</div><div class="role">Testes unitários (obrigatório)</div></div></div>
+      <div class="stack-card"><span class="icon">🎭</span><div><div class="name">Playwright</div><div class="role">Testes E2E (antes de todo deploy)</div></div></div>
     </div>
   </section>
 </div>
@@ -553,7 +651,10 @@
 
 <!-- Footer -->
 <footer>
-  <p><strong>Trajetórias 2.0</strong> · ISC — Instituto Serzedello Corrêa · Tribunal de Contas da União</p>
+  <div style="margin-bottom:16px">
+    <img src="assets/logo/logo-t2-horizontal.png" alt="Trajetórias 2.0" style="height:32px;width:auto;display:inline-block">
+  </div>
+  <p>ISC — Instituto Serzedello Corrêa · Tribunal de Contas da União</p>
   <p style="margin-top:6px">Projeto NuPlan &nbsp;·&nbsp; <a href="https://github.com/gustavoparolin/trajetorias2">GitHub</a> &nbsp;·&nbsp; Portaria TCU 130/2023</p>
 </footer>
 
