@@ -1,0 +1,44 @@
+# Estudo de engenharia reversa (não vai ao repo público)
+.estudo/
+
+# Dependências
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+dist/
+build/
+.next/
+out/
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.*.local
+
+# Banco de dados local
+*.db
+*.sqlite
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Prisma (migrations geradas localmente ficam, mas não o client)
+prisma/client/
+
+# Seed: exports do Oracle com dados reais (PII — nunca commitar)
+seed/oracle-exports/*.csv
+seed/oracle-exports/*.json
