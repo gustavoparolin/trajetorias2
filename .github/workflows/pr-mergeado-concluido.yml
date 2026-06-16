@@ -1,0 +1,79 @@
+name: PR mergeado → concluido
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  marcar-concluido:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Encontrar issues vinculados e marcar como concluido
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const corpo = context.payload.pull_request.body || '';
+            const titulo = context.payload.pull_request.title || '';
+            const textoCompleto = corpo + ' ' + titulo;
+
+            // Detectar "Closes #N", "Fecha #N", "Resolve #N", "Fix #N"
+            const regex = /(?:closes?|fecha|resolve[s]?|fix(?:es)?)\s+#(\d+)/gi;
+            const issuesVinculados = [];
+            let match;
+
+            while ((match = regex.exec(textoCompleto)) !== null) {
+              issuesVinculados.push(parseInt(match[1]));
+            }
+
+            if (issuesVinculados.length === 0) {
+              console.log('Nenhum issue vinculado encontrado no PR.');
+              return;
+            }
+
+            const labelsStatus = [
+              'aguardando-aprovacao',
+              'ajuste-solicitado',
+              'aprovado',
+              'em-implementacao',
+              'concluido',
+              'falha-ia'
+            ];
+
+            for (const numeroIssue of issuesVinculados) {
+              try {
+                // Remover labels de status atuais
+                const { data: labelsAtuais } = await github.rest.issues.listLabelsOnIssue({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: numeroIssue
+                });
+
+                for (const label of labelsAtuais) {
+                  if (labelsStatus.includes(label.name)) {
+                    await github.rest.issues.removeLabel({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: numeroIssue,
+                      name: label.name
+                    });
+                  }
+                }
+
+                // Adicionar concluido
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: numeroIssue,
+                  labels: ['concluido']
+                });
+
+                console.log(`Issue #${numeroIssue} → concluido`);
+              } catch (erro) {
+                console.error(`Erro ao atualizar issue #${numeroIssue}:`, erro.message);
+              }
+            }

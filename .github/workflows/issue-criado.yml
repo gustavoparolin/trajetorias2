@@ -1,0 +1,24 @@
+name: Issue criado → aguardando-aprovacao
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  adicionar-label-inicial:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Adicionar label aguardando-aprovacao
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['aguardando-aprovacao']
+            });
+            console.log(`Issue #${context.issue.number} → aguardando-aprovacao`);
