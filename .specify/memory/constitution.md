@@ -18,17 +18,24 @@ The sequence is always: spec → clarify → plan → tasks → GitHub Issue (ap
 No issue may be opened without a corresponding spec artifact in `specs/`.
 No implementation may begin without the issue carrying the `approved` label.
 
-### II. Approval-Gated Development (NON-NEGOTIABLE)
-The AI agent MUST only implement issues that carry the `approved` label.
-Workflow:
-1. Spec is completed and reviewed
-2. Owner adds `approved` label to the GitHub Issue
-3. AI agent picks up the issue, creates branch `feat/issue-N-description`, implements
-4. AI runs `npm test` and `npx playwright test` — if either fails, no PR is opened
-5. AI opens PR linking `Closes #N`, requests review
-6. Owner reviews and merges; issue closes automatically
+### II. Desenvolvimento Controlado por Aprovação (NON-NEGOTIABLE)
+O agente IA DEVE implementar apenas Issues com label `aprovado`.
 
-Issues without `approved` MUST be ignored by the AI agent, even if explicitly requested mid-session.
+Dois caminhos válidos:
+
+**Caminho A — Spec-First**: spec-kit gera spec → Issues criados → owner adiciona `aprovado` → agente implementa.
+
+**Caminho B — Issue-First**: humano cria Issue no GitHub → owner adiciona `aprovado` → agente cria spec a partir do Issue → agente implementa.
+
+Em ambos os casos:
+1. Agente lê Issue com label `aprovado`, adiciona label `em-andamento`
+2. Se spec não existir: agente cria `specs/NNN-nome/spec.md` a partir do Issue
+3. Agente cria branch `feat/issue-N-descricao`, implementa
+4. Agente executa `npm test` e `npx playwright test` — falha = não abre PR
+5. Agente abre PR com `Closes #N`, aguarda revisão
+6. Owner revisa e mergeia; Issue fecha automaticamente
+
+Issues sem label `aprovado` DEVEM ser ignorados pelo agente, mesmo se solicitado explicitamente.
 
 ### III. Test-First (NON-NEGOTIABLE)
 Tests MUST be written before implementation is considered complete.
@@ -38,15 +45,16 @@ Tests MUST be written before implementation is considered complete.
 - The AI agent MUST run `npm test` and `npx playwright test` before opening a PR
 - A PR that causes any test to fail MUST NOT be merged
 
-### IV. Portuguese-First
-All user-facing content MUST be in Brazilian Portuguese (PT-BR):
-- UI labels, messages, toasts, error texts
-- GitHub Issue titles and descriptions
-- Commit messages (conventional: `feat(#N): descrição`)
-- PR titles and descriptions
-- Code comments (when needed)
+### IV. Português-Primeiro
+Todo conteúdo visível ao usuário DEVE estar em Português Brasileiro (PT-BR):
+- Labels da UI, mensagens, toasts, textos de erro
+- Títulos e descrições de Issues no GitHub
+- Labels do repositório (`aprovado`, `em-andamento`, `historia-usuario`, etc.)
+- Mensagens de commit (convencional: `feat(#N): descrição`)
+- Títulos e descrições de PRs
+- Comentários de código (quando necessário)
 
-Internal identifiers (variable names, function names, API routes) MAY be in English.
+Identificadores internos (nomes de variáveis, funções, rotas de API) PODEM ser em PT-BR ou inglês.
 
 ### V. Simplicity — YAGNI
 Implement exactly what the approved issue specifies. No more.
@@ -76,15 +84,22 @@ Environment variables are never committed. Secrets live in Coolify's Environment
 ## Development Workflow
 
 ```
-1. /speckit.specify  → creates specs/NNN-feature/spec.md
-2. /speckit.clarify  → resolves ambiguities in spec.md
-3. /speckit.checklist → validates spec quality gate
-4. /speckit.plan     → creates specs/NNN-feature/plan.md
-5. /speckit.tasks    → creates specs/NNN-feature/tasks.md
-6. /speckit.taskstoissues → creates GitHub Issues from tasks.md
-7. Owner reviews Issues → adds `approved` label
-8. /speckit.implement → AI implements approved issue, runs tests, opens PR
-9. Owner reviews PR → merges → issue closes
+Caminho A — Spec-First:
+1. /speckit.specify       → cria specs/NNN-nome/spec.md
+2. /speckit.clarify       → resolve ambiguidades na spec.md
+3. /speckit.checklist     → valida qualidade da spec (gate)
+4. /speckit.plan          → cria specs/NNN-nome/plano.md
+5. /speckit.tasks         → cria specs/NNN-nome/tarefas.md
+6. /speckit.taskstoissues → cria Issues no GitHub a partir das tarefas
+7. Owner revisa Issues → adiciona label `aprovado`
+8. /speckit.implement     → agente implementa, testa, abre PR
+9. Owner revisa PR → mergeia → Issue fecha
+
+Caminho B — Issue-First:
+1. Humano cria Issue no GitHub descrevendo o que quer
+2. Owner adiciona label `aprovado`
+3. /speckit.implement     → agente cria spec + implementa + testa + abre PR
+4. Owner revisa PR → mergeia → Issue fecha
 ```
 
 ### Branch naming
@@ -128,4 +143,4 @@ Closes #N
 - PATCH version: clarifications, wording, non-semantic fixes
 - All PRs must reference the issue they close; PRs without an issue reference are not allowed
 
-**Version**: 1.0.0 | **Ratified**: 2026-06-16 | **Last Amended**: 2026-06-16
+**Versão**: 1.1.0 | **Ratificado**: 2026-06-16 | **Última alteração**: 2026-06-16
