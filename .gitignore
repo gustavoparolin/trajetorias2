@@ -42,3 +42,9 @@ prisma/client/
 # Seed: exports do Oracle com dados reais (PII — nunca commitar)
 seed/oracle-exports/*.csv
 seed/oracle-exports/*.json
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
