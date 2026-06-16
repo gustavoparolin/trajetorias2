@@ -19,20 +19,57 @@ Nenhuma implementação pode começar sem o Issue carregar o label `aprovado`.
 
 ### II. Desenvolvimento Controlado por Aprovação (INEGOCIÁVEL)
 O agente IA DEVE implementar apenas Issues com label `aprovado`.
+Cada Issue possui exatamente **1 label de status** por vez.
 
-Dois caminhos válidos:
+#### Labels de status (ciclo de vida do Issue)
 
-**Caminho A — Spec-First** (time técnico): spec-kit gera spec → Issues criados → responsável adiciona `aprovado` → agente implementa.
+| Label | Cor | Significado | Próximo passo |
+|-------|-----|-------------|---------------|
+| `aguardando-aprovacao` | 🟡 ouro | Spec criado pela IA; aguarda validação humana | Humano aprova ou pede ajuste |
+| `ajuste-solicitado` | 🔴 vermelho | Humano comentou pedindo mudanças | IA refaz a spec → volta para `aguardando-aprovacao` |
+| `aprovado` | 🔵 azul | Humano aprovou o spec | **Único gatilho** para desenvolvimento pela IA |
+| `em-implementacao` | 🟣 marinho | Agente IA iniciou desenvolvimento | IA finaliza e abre PR |
+| `concluido` | 🟢 verde | Implementação finalizada, PR mergeado | Fluxo encerrado |
+| `falha-ia` | 🔴 vermelho escuro | IA não conseguiu implementar | Requer intervenção humana |
 
-**Caminho B — Issue-First** (qualquer membro do time): humano cria Issue no GitHub descrevendo o que quer → responsável adiciona `aprovado` → agente cria a spec a partir do Issue → agente implementa.
+#### Regras de transição
+- Apenas **1 label de status** por vez — trocar sempre remove o anterior
+- `ajuste-solicitado` sempre substitui o label atual
+- Após a IA refazer a spec → volta para `aguardando-aprovacao`
+- `aprovado` é o **único gatilho** para desenvolvimento
+- PR mergeado → label vira `concluido`
 
-Em ambos os casos:
-1. Agente lê Issue com label `aprovado`, adiciona label `em-andamento`
-2. Se spec não existir: agente cria `specs/NNN-nome/spec.md` a partir do Issue
-3. Agente cria branch `feat/issue-N-descricao`, implementa
-4. Agente executa `npm test` e `npx playwright test` — falha = não abre PR
-5. Agente abre PR com `Closes #N`, aguarda revisão
-6. Responsável revisa e mergeia; Issue fecha automaticamente
+#### Dois caminhos válidos
+
+**Caminho A — Spec-First** (time técnico):
+```
+/speckit.specify → Issues criados com aguardando-aprovacao
+→ (revisão humana) → aprovado
+→ IA implementa (em-implementacao) → PR → concluido
+```
+
+**Caminho B — Issue-First** (qualquer membro do time):
+```
+Humano cria Issue → responsável adiciona aprovado
+→ IA cria spec + implementa (em-implementacao) → PR → concluido
+```
+
+#### Fluxo com iteração
+```
+aguardando-aprovacao
+  ↓ (humano comenta)
+ajuste-solicitado
+  ↓ (IA refaz spec)
+aguardando-aprovacao
+  ↓ (humano aprova)
+aprovado
+  ↓ (IA inicia)
+em-implementacao
+  ↓ (PR mergeado)
+concluido
+```
+
+Em caso de erro: qualquer status → `falha-ia` → intervenção humana → retomar no status anterior.
 
 Issues sem label `aprovado` DEVEM ser ignorados pelo agente, mesmo se solicitado explicitamente durante a sessão.
 
@@ -142,4 +179,4 @@ Closes #N
 - Versão PATCH: clarificações, redação, correções sem impacto semântico
 - Todo PR DEVE referenciar o Issue que fecha; PRs sem referência de Issue não são permitidos
 
-**Versão**: 1.2.0 | **Ratificado**: 2026-06-16 | **Última alteração**: 2026-06-16
+**Versão**: 1.3.0 | **Ratificado**: 2026-06-16 | **Última alteração**: 2026-06-16

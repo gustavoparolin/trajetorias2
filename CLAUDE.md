@@ -23,19 +23,41 @@ Existem dois caminhos válidos para chegar à implementação:
 
 **Em ambos os casos: sem label `aprovado` → agente para e informa o usuário.**
 
+## Ciclo de vida de um Issue (labels de status)
+
+| Label | Quem aplica | Significado |
+|-------|------------|-------------|
+| `aguardando-aprovacao` | IA (automático) | Spec criado, aguarda validação humana |
+| `ajuste-solicitado` | Humano | Pediu mudanças na spec — IA deve refazer |
+| `aprovado` | Humano | **Único gatilho** para desenvolvimento |
+| `em-implementacao` | IA (automático) | Agente iniciou o desenvolvimento |
+| `concluido` | IA (automático) | PR mergeado, fluxo encerrado |
+| `falha-ia` | IA (automático) | Erro — requer intervenção humana |
+
+**Regra:** apenas 1 label de status por vez. Trocar sempre remove o anterior.
+
 ## Fluxo de implementação (steps obrigatórios)
 
 1. Verificar Issues com label `aprovado` em `github.com/gustavoparolin/trajetorias2`
 2. Escolher o Issue de maior prioridade (menor número ou milestone mais próximo)
-3. Adicionar label `em-andamento` ao Issue
+3. Trocar label para `em-implementacao` (remover `aprovado`)
 4. Se não existir spec: criar `specs/NNN-nome/spec.md` a partir do Issue
 5. Criar branch: `feat/issue-N-descricao-curta`
 6. Implementar conforme spec e critérios de aceite do Issue
 7. Executar: `npm run typecheck` → corrigir se falhar
 8. Executar: `npm test` → corrigir se falhar
 9. Executar: `npx playwright test` → corrigir se falhar
-10. Abrir PR com `Closes #N` no corpo
+   - Se algum teste falhar após tentativas de correção: trocar label para `falha-ia`, parar e informar o usuário
+10. Abrir PR com `Closes #N` no corpo (PR mergeado → GitHub fecha o Issue → label vira `concluido`)
 11. Não mergear — aguardar revisão do owner
+
+## Fluxo de ajuste de spec (quando label é `ajuste-solicitado`)
+
+1. Ler comentários do Issue para entender o que mudar
+2. Atualizar `specs/NNN-nome/spec.md`
+3. Comentar no Issue descrevendo o que foi ajustado
+4. Trocar label de `ajuste-solicitado` para `aguardando-aprovacao`
+5. Aguardar nova aprovação humana — não implementar ainda
 
 ## Idioma
 
@@ -57,11 +79,22 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 
 ## Labels do repositório
 
+**Status (apenas 1 por vez):**
+
+| Label | Cor | Significado |
+|-------|-----|------------|
+| `aguardando-aprovacao` | 🟡 | Spec criado pela IA, aguarda validação |
+| `ajuste-solicitado` | 🔴 | Humano pediu mudanças na spec |
+| `aprovado` | 🔵 | Aprovado — gatilho para desenvolvimento |
+| `em-implementacao` | 🟣 | IA está desenvolvendo |
+| `concluido` | 🟢 | PR mergeado, encerrado |
+| `falha-ia` | 🔴 | Erro na IA, requer intervenção humana |
+
+**Classificação (podem coexistir com status):**
+
 | Label | Significado |
 |-------|------------|
-| `aprovado` | Issue aprovado para implementação — agente pode começar |
-| `em-andamento` | Agente está implementando |
-| `historia-usuario` | História de usuário (criada por humano ou spec-kit) |
+| `historia-usuario` | História de usuário |
 | `mvp` | Escopo do MVP Sprint 1 |
 | `pos-mvp` | Fora do escopo MVP |
 | `spec-kit` | Gerado pelo workflow spec-kit |
