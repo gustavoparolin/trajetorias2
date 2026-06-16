@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mapa de Jornadas — Sistema Trajetórias</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    /* ── Layout da página de fluxos ─────────────────────── */
+    .flows-hero {
+      background: linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%);
+      color: white; padding: 32px 32px 28px; margin: -24px -24px 32px;
+    }
+    .flows-hero h1 { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+    .flows-hero p  { font-size: 14px; opacity: .85; max-width: 640px; }
+
+    /* ── Índice de fluxos ──────────────────────────────── */
+    .flows-index {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px; margin-bottom: 40px;
+    }
+    .flow-card {
+      border: 1px solid #E5E7EB; border-radius: 10px; padding: 14px 16px;
+      text-decoration: none; color: inherit; background: white;
+      transition: box-shadow .15s, transform .15s;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .flow-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.12); transform: translateY(-2px); text-decoration: none; }
+    .flow-card .flow-id   { font-size: 11px; font-weight: 700; letter-spacing: .08em;
+                            padding: 2px 8px; border-radius: 999px; width: fit-content; }
+    .flow-card .flow-name { font-size: 13px; font-weight: 700; color: #1E293B; }
+    .flow-card .flow-who  { font-size: 11px; color: #6B7280; }
+    .flow-card .flow-issues { font-size: 11px; color: #DC2626; font-weight: 600; }
+
+    /* Actor colors */
+    .actor-usuario   { background: #DBEAFE; color: #1D4ED8; }
+    .actor-gestor    { background: #DCFCE7; color: #15803D; }
+    .actor-admin     { background: #FFEDD5; color: #C2410C; }
+    .actor-curador   { background: #CCFBF1; color: #0F766E; }
+    .actor-multi     { background: #EDE9FE; color: #6D28D9; }
+
+    /* ── Seção de cada fluxo ───────────────────────────── */
+    .flow-section {
+      border: 1px solid #E5E7EB; border-radius: 12px; background: white;
+      margin-bottom: 36px; overflow: hidden;
+    }
+    .flow-section-header {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 20px 24px; border-bottom: 1px solid #F3F4F6;
+    }
+    .flow-section-id {
+      font-size: 13px; font-weight: 800; padding: 4px 12px;
+      border-radius: 999px; white-space: nowrap; flex-shrink: 0;
+    }
+    .flow-section-title { font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 4px; }
+    .flow-section-sub   { font-size: 13px; color: #64748B; }
+    .flow-section-body  { padding: 24px; }
+
+    /* ── Tabs: "Como é hoje" / "Oportunidade" ─────────── */
+    .tabs { display: flex; gap: 0; border-bottom: 2px solid #F3F4F6; margin-bottom: 20px; }
+    .tab-btn {
+      padding: 8px 18px; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: none; background: none; color: #6B7280;
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+    }
+    .tab-btn.active { color: #2563EB; border-bottom-color: #2563EB; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* ── Diagrama Mermaid ──────────────────────────────── */
+    .mermaid-wrap {
+      background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px;
+      padding: 20px; overflow-x: auto; text-align: center;
+    }
+    .mermaid { display: inline-block; min-width: 200px; }
+
+    /* ── Passos simples (alternativa textual) ─────────── */
+    .steps { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+    .step  {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 14px; border-radius: 8px; background: #F8FAFC;
+      border-left: 3px solid #94A3B8;
+    }
+    .step.user    { border-left-color: #3B82F6; background: #EFF6FF; }
+    .step.system  { border-left-color: #94A3B8; background: #F8FAFC; }
+    .step.gestor  { border-left-color: #22C55E; background: #F0FDF4; }
+    .step.admin   { border-left-color: #F97316; background: #FFF7ED; }
+    .step.warn    { border-left-color: #FBBF24; background: #FFFBEB; }
+    .step .step-num { font-size: 11px; font-weight: 700; color: white; background: #94A3B8;
+                      border-radius: 50%; width: 20px; height: 20px; display: flex;
+                      align-items: center; justify-content: center; flex-shrink: 0; }
+    .step.user .step-num   { background: #3B82F6; }
+    .step.gestor .step-num { background: #22C55E; }
+    .step.admin .step-num  { background: #F97316; }
+    .step.warn .step-num   { background: #FBBF24; color: #92400E; }
+    .step .step-text { font-size: 13px; color: #374151; }
+    .step .step-actor { font-size: 11px; font-weight: 600; color: #6B7280; margin-top: 2px; }
+
+    /* ── Alertas e oportunidades ──────────────────────── */
+    .issues-list { margin-top: 16px; }
+    .issue-item {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 10px 14px; border-radius: 8px; margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .issue-bug  { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+    .issue-warn { background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; }
+    .issue-ok   { background: #F0FDF4; border: 1px solid #BBF7D0; color: #166534; }
+    .issue-id   { font-weight: 700; font-family: monospace; flex-shrink: 0; }
+
+    .opp-box {
+      background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 8px;
+      padding: 14px 16px; margin-top: 16px;
+    }
+    .opp-box h4 { font-size: 13px; font-weight: 700; color: #0369A1; margin-bottom: 6px; }
+    .opp-box p  { font-size: 13px; color: #0C4A6E; }
+
+    /* ── Grupo de fluxos ────────────────────────────────── */
+    .flows-group-title {
+      font-size: 15px; font-weight: 800; color: #374151;
+      padding: 8px 0 12px; border-bottom: 2px solid #F3F4F6; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .compare-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px;
+    }
+    @media (max-width: 800px) { .compare-grid { grid-template-columns: 1fr; } }
+    .compare-col h4 { font-size: 12px; font-weight: 700; text-transform: uppercase;
+                      letter-spacing: .06em; margin-bottom: 10px; padding: 4px 10px;
+                      border-radius: 999px; width: fit-content; }
+    .col-atual { }
+    .col-atual h4 { background: #F3F4F6; color: #6B7280; }
+    .col-melhor { }
+    .col-melhor h4 { background: #DBEAFE; color: #1D4ED8; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ── Sidebar ──────────────────────────────────────────── -->
+<nav class="sidebar">
+  <a class="home-link" href="index.html">← Mockup Trajetórias</a>
+  <div class="nav-group">
+    <div class="nav-group-title">Jornadas</div>
+    <a href="#f1">F1 — Adesão à trajetória</a>
+    <a href="#f2">F2 — Autoavaliação técnica</a>
+    <a href="#f3">F3/F4/F5 — Liderança</a>
+    <a href="#f6">F6 — Homologação</a>
+    <a href="#f7">F7 — Delegação</a>
+    <a href="#f8">F8 — Evidências</a>
+    <a href="#f9">F9 — Alcance de nível</a>
+    <a href="#f10">F10 — Consultar posição</a>
+    <a href="#f11">F11 — Curadoria</a>
+    <a href="#f12">F12 — Administração</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Legenda de atores</div>
+    <span style="display:block;padding:6px 16px;font-size:12px">
+      <span style="background:#DBEAFE;color:#1D4ED8;padding:1px 8px;border-radius:999px;font-weight:700">USUARIO</span> Servidor TCU
+    </span>
+    <span style="display:block;padding:6px 16px;font-size:12px">
+      <span style="background:#DCFCE7;color:#15803D;padding:1px 8px;border-radius:999px;font-weight:700">GESTOR</span> Gestor / Dirigente
+    </span>
+    <span style="display:block;padding:6px 16px;font-size:12px">
+      <span style="background:#FFEDD5;color:#C2410C;padding:1px 8px;border-radius:999px;font-weight:700">ADMIN</span> ISC / Administrador
+    </span>
+    <span style="display:block;padding:6px 16px;font-size:12px">
+      <span style="background:#CCFBF1;color:#0F766E;padding:1px 8px;border-radius:999px;font-weight:700">CURADOR</span> Curador de traj.
+    </span>
+  </div>
+</nav>
+
+<!-- ── Conteúdo principal ─────────────────────────────── -->
+<main class="main-content">
+
+<div class="flows-hero">
+  <h1>🗺 Mapa de Jornadas do Usuário</h1>
+  <p>Como o servidor, o gestor e o ISC realizam cada tarefa no Sistema Trajetórias <em>hoje</em> — e onde existem oportunidades de simplificação. Baseado na engenharia reversa do APEX 18 (Jun/2026).</p>
+</div>
+
+<!-- ── Índice rápido ───────────────────────────────────── -->
+<h2 style="font-size:16px;font-weight:700;color:#374151;margin-bottom:16px">Índice de jornadas</h2>
+<div class="flows-index">
+  <a class="flow-card" href="#f1">
+    <span class="flow-id actor-usuario">F1</span>
+    <span class="flow-name">Aderir a uma trajetória</span>
+    <span class="flow-who">👤 Servidor</span>
+    <span class="flow-issues" style="color:#16A34A">✅ Sem bloqueadores</span>
+  </a>
+  <a class="flow-card" href="#f2">
+    <span class="flow-id actor-usuario">F2</span>
+    <span class="flow-name">Autoavaliar competências técnicas/pessoais</span>
+    <span class="flow-who">👤 Servidor</span>
+    <span class="flow-issues">⚠️ Tela de evidência sem acesso direto</span>
+  </a>
+  <a class="flow-card" href="#f3">
+    <span class="flow-id actor-usuario">F3–F5</span>
+    <span class="flow-name">Avaliar competências de liderança</span>
+    <span class="flow-who">👤 Servidor</span>
+    <span class="flow-issues">⚠️ Branch de teste em produção</span>
+  </a>
+  <a class="flow-card" href="#f6">
+    <span class="flow-id actor-gestor">F6</span>
+    <span class="flow-name">Homologar competências da equipe</span>
+    <span class="flow-who">👔 Gestor</span>
+    <span class="flow-issues">⚠️ Acesso inconsistente no menu (E009)</span>
+  </a>
+  <a class="flow-card" href="#f7">
+    <span class="flow-id actor-gestor">F7</span>
+    <span class="flow-name">Delegar homologação</span>
+    <span class="flow-who">👔 Gestor</span>
+    <span class="flow-issues" style="color:#16A34A">✅ Sem bloqueadores</span>
+  </a>
+  <a class="flow-card" href="#f8">
+    <span class="flow-id actor-usuario">F8</span>
+    <span class="flow-name">Submeter evidências para avançar de nível</span>
+    <span class="flow-who">👤 Servidor</span>
+    <span class="flow-issues">⚠️ Solicitação dispersa em 2 telas</span>
+  </a>
+  <a class="flow-card" href="#f9">
+    <span class="flow-id actor-admin">F9</span>
+    <span class="flow-name">ISC analisa e homologa pedido de nível</span>
+    <span class="flow-who">🔧 ISC/Admin + 👔 Gestor</span>
+    <span class="flow-issues">🔴 CRÍTICO: página homologa ao ser aberta (E028)</span>
+  </a>
+  <a class="flow-card" href="#f10">
+    <span class="flow-id actor-usuario">F10</span>
+    <span class="flow-name">Consultar minha posição na trajetória</span>
+    <span class="flow-who">👤 Servidor</span>
+    <span class="flow-issues">⚠️ Duas telas com o mesmo nome</span>
+  </a>
+  <a class="flow-card" href="#f11">
+    <span class="flow-id actor-curador">F11</span>
+    <span class="flow-name">Curadorar objetos de aprendizagem</span>
+    <span class="flow-who">📚 Curador</span>
+    <span class="flow-issues">⚠️ Redireciona para sistema externo (ISCNet2)</span>
+  </a>
+  <a class="flow-card" href="#f12">
+    <span class="flow-id actor-admin">F12</span>
+    <span class="flow-name">Administrar trajetórias e competências</span>
+    <span class="flow-who">🔧 ISC/Admin</span>
+    <span class="flow-issues">⚠️ Tela de edição acessível apenas via fluxo (sem menu)</span>
+  </a>
+</div>
+
+<hr style="margin:8px 0 40px;border:none;border-top:1px solid #E5E7EB">
+
+<!-- ══════════════════════════════════════════════════════
+     F1 — ADESÃO
+════════════════════════════════════════════════════════ -->
+<div id="f1" class="flow-section">
+  <div class="flow-section-header">
+    <span class="flow-section-id actor-usuario">F1</span>
+    <div>
+      <div class="flow-section-title">Aderir a uma trajetória profissional</div>
+      <div class="flow-section-sub">👤 <strong>Ator:</strong> Servidor · 📋 <strong>Normativo:</strong> Art. 4º, Portaria TCU 130/2023 — adesão facultativa</div>
+    </div>
+  </div>
+  <div class="flow-section-body">
+    <p style="font-size:13px;color:#374151;margin-bottom:20px">
+      A adesão a uma trajetória é <strong>voluntária</strong>. O servidor pode aderir a quantas trajetórias quiser e pode desistir a qualquer momento. Cada trajetória tem três níveis de desenvolvimento: Fundamental → Profissional → Especialista.
+    </p>
+
+    <div class="compare-grid">
+      <div class="compare-col col-atual">
+        <h4>Como é hoje</h4>
+        <div class="steps">
+          <div class="step user"><span class="step-num">1</span><div><span class="step-text">Acessa "Minhas Trajetórias" pelo menu lateral</span><div class="step-actor">👤 Servidor — Tela #70</div></div></div>
+          <div class="step system"><span class="step-num">2</span><div><span class="step-text">Sistema exibe a lista de trajetórias disponíveis e as que o servidor já aderiu</span><div class="step-actor">💻 Sistema</div></div></div>
+          <div class="step user"><span class="step-num">3</span><div><span class="step-text">Clica em "Aderir Trajetória" no cartão desejado</span><div class="step-actor">👤 Servidor</div></div></div>
+          <div class="step system"><span class="step-num">4</span><div><span class="step-text">Uma janela pop-up abre para confirmar a adesão (Modal #72)</span><div class="step-actor">💻 Sistema</div></div></div>
+          <div class="step user"><span class="step-num">5</span><div><span class="step-text">Confirma a adesão</span><div class="step-actor">👤 Servidor</div></div></div>
+          <div class="step system"><span class="step-num">6</span><div><span class="step-text">Trajetória é registrada; lista é atualizada com o status "Aderida"</span><div class="step-actor">💻 Sistema</div></div></div>
+        </div>
+      </div>
+      <div class="compare-col col-melhor">
+        <h4>Como poderia ser</h4>
+        <div class="steps">
+          <div class="step user"><span class="step-num">1</span><div><span class="step-text">Acessa "Minhas Trajetórias"</span><div class="step-actor">👤 Servidor</div></div></div>
+          <div class="step system"><span class="step-num">2</span><div><span class="step-text">Sistema recomenda trajetórias com base no espaço de atuação atual do servidor (cargo/unidade)</span><div class="step-actor">💻 Sistema — personalização</div></div></div>
+          <div class="step user"><span class="step-num">3</span><div><span class="step-text">Clica em "Aderir" diretamente no cartão — sem pop-up intermediário para adesão simples</span><div class="step-actor">👤 Servidor</div></div></div>
+          <div class="step system"><span class="step-num">4</span><div><span class="step-text">Trajetória ativada; progresso inicial exibido (0% dos comportamentos avaliados)</span><div class="step-actor">💻 Sistema</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="opp-box" style="margin-top:16px">
+      <h4>💡 Oportunidade de melhoria</h4>
+      <p>O fluxo atual funciona bem. A principal melhoria seria recomendações baseadas no espaço de atuação do servidor (cargo/unidade/lotação), tornando a descoberta de trajetórias relevantes mais proativa. Também seria útil exibir o progresso esperado antes da adesão.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     F2 — AUTOAVALIAÇÃO TÉCNICA
+════════════════════════════════════════════════════════ -->
+<div id="f2" class="flow-section">
+  <div class="flow-section-header">
+    <span class="flow-section-id actor-usuario">F2</span>
+    <div>
+      <div class="flow-section-title">Autoavaliar competências técnicas e pessoais</div>
+      <div class="flow-section-sub">👤 <strong>Ator:</strong> Servidor · 📋 <strong>Normativo:</strong> Art. 11, Portaria TCU 130/2023 — grau de entrega 1–5</div>
+    </div>
+  </div>
+  <div class="flow-section-body">
+    <p style="font-size:13px;color:#374151;margin-bottom:20px">
+      O servidor avalia cada <strong>comportamento</strong> de suas competências usando uma escala de 1 a 5: <em>1 = Não demonstra · 2 = Demonstra pouco · 3 = Demonstra moderadamente · 4 = Demonstra muito · 5 = É especialista e dissemina</em>. Depois de avaliar todos, solicita que o Gestor valide (homologue) as avaliações.
+    </p>
+
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+flowchart LR
+  A["👤 Servidor\nacessa\n'Minhas Competências'"]
+  B["Sistema exibe lista\nde competências e\ncomportamentos"]
+  C["Servidor clica\nnum comportamento\npara avaliar"]
+  D[/"⬡ Pop-up: escolhe\no grau 1 a 5"/]
+  E{"Avaliou todos\nos comportamentos?"}
+  F["Marca todos os\navaliados e clica\n'Solicitar Homologação'"]
+  G[/"⬡ Confirmação\nde solicitação"/]
+  H["Gestor é\nnotificado para\nhomologar"]
+  A --> B --> C --> D --> E
+  E -- Não --> C
+  E -- Sim --> F --> G --> H
+  style A fill:#DBEAFE,stroke:#2563EB
+  style H fill:#DCFCE7,stroke:#22C55E
+      </div>
+    </div>
+
+    <div class="issues-list">
+      <div class="issue-warn">
+        <span class="issue-id">E029</span>
+        <span>A tela de <strong>"Evidência de competência"</strong> (onde o servidor pode registrar documentos que comprovam sua avaliação) está no sistema mas <strong>não aparece no menu</strong>. O servidor pode não saber que ela existe ou como acessá-la.</span>
+      </div>
+    </div>
+
+    <div class="opp-box">
+      <h4>💡 Oportunidade de melhoria</h4>
+      <p>Uma barra de progresso visual mostrando "X de Y comportamentos avaliados nesta competência" tornaria claro o quanto falta. Também seria útil salvar automaticamente cada avaliação (sem precisar confirmar em pop-up por comportamento) e agrupar os comportamentos por competência com cabeçalhos expansíveis.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     F3-F5 — LIDERANÇA
+════════════════════════════════════════════════════════ -->
+<div id="f3" class="flow-section">
+  <div class="flow-section-header">
+    <span class="flow-section-id actor-usuario">F3–F5</span>
+    <div>
+      <div class="flow-section-title">Avaliar competências de liderança (3 modos)</div>
+      <div class="flow-section-sub">👤 <strong>Ator:</strong> Servidor · 📋 <strong>Normativo:</strong> Trajetória de Liderança e Gestão (avaliação 360°)</div>
+    </div>
+  </div>
+  <div class="flow-section-body">
+    <p style="font-size:13px;color:#374151;margin-bottom:20px">
+      A Trajetória de Liderança usa <strong>avaliação 360°</strong>: o próprio servidor se avalia (F3), avalia seu líder superior (F4) e avalia seus liderados (F5). Os três modos usam a <em>mesma tela</em> do sistema — o que muda é um parâmetro invisível passado pela URL.
+    </p>
+
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+flowchart TD
+  PORTAL["👤 Servidor acessa\n'Trajetória de Liderança\ne Gestão'"]
+  PORTAL --> F3["F3: Seleciona\n'Autoavaliar minhas\ncompetências'"]
+  PORTAL --> F4["F4: Seleciona\n'Avaliar meu\nlíder superior'"]
+  PORTAL --> F5["F5: Avaliar meu\nlíder subordinado"]
+  F3 & F4 & F5 --> TELA["Mesma tela\n(Avaliação de Liderança)\n— graus 1 a 5 por\ncomportamento"]
+  TELA --> SALVA["Sistema salva\nas avaliações"]
+  style PORTAL fill:#DBEAFE,stroke:#2563EB
+  style TELA fill:#FEF9C3,stroke:#CA8A04
+  style SALVA fill:#DCFCE7,stroke:#22C55E
+      </div>
+    </div>
+
+    <div class="issues-list">
+      <div class="issue-bug">
+        <span class="issue-id">E020</span>
+        <span>Existe um <strong>link de teste</strong> ("branch teste") nesta tela que ainda está ativo em produção e abre uma tela de validação obsoleta. O servidor pode clicar por acidente.</span>
+      </div>
+      <div class="issue-warn">
+        <span class="issue-id">E021</span>
+        <span>O sistema tem código que converte nomes antigos das opções (de antes de 2023). Isso indica que o sistema pode estar com textos de botão/menu incompatíveis com a Portaria 130/2023.</span>
+      </div>
+    </div>
+
+    <div class="opp-box">
+      <h4>💡 Oportunidade de melhoria</h4>
+      <p>Em vez de levar todos os três modos para a mesma tela com um parâmetro oculto, criar três pontos de entrada visualmente distintos tornaria mais claro para o servidor o que ele está fazendo. Também seria útil mostrar quem já foi avaliado e quem está pendente na visão de 360°.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     F6 — HOMOLOGAÇÃO
+════════════════════════════════════════════════════════ -->
+<div id="f6" class="flow-section">
+  <div class="flow-section-header">
+    <span class="flow-section-id actor-gestor">F6</span>
+    <div>
+      <div class="flow-section-title">Gestor homologa as competências da equipe</div>
+      <div class="flow-section-sub">👔 <strong>Ator:</strong> Gestor · 📋 <strong>Normativo:</strong> Art. 15, Portaria TCU 130/2023</div>
+    </div>
+  </div>
+  <div class="flow-section-body">
+    <p style="font-size:13px;color:#374151;margin-bottom:20px">
+      O Gestor valida os graus de entrega que cada servidor da sua equipe atribuiu a si mesmo. Pode aprovar ou reprovar individualmente ou em lote ("Homologar todos" / "Não homologar todos").
+    </p>
+
+    <div class="compare-grid">
+      <div class="compare-col col-atual">
+        <h4>Como é hoje</h4>
+        <div class="steps">
+          <div class="step gestor"><span class="step-num">1</span><div><span class="step-text">Acessa "Homologar competência" pelo menu</span><div class="step-actor">👔 Gestor — Tela #64</div></div></div>
+          <div class="step system"><span class="step-num">2</span><div><span class="step-text">Seleciona um servidor da sua equipe para visualizar as autoavaliações</span><div class="step-actor">💻 Sistema</div></div></div>
+          <div class="step gestor"><span class="step-num">3</span><div><span class="step-text">Revisa cada comportamento e decide: Homologar todos / Não homologar todos</span><div class="step-actor">👔 Gestor</div></div></div>
+          <div class="step system"><span class="step-num">4</span><div><span class="step-text">Uma janela de confirmação aparece (pop-up)</span><div class="step-actor">💻 Sistema</div></div></div>
+          <div class="step gestor"><span class="step-num">5</span><div><span class="step-text">Confirma a decisão</span><div class="step-actor">👔 Gestor</div></div></div>
+          <div class="step system"><span class="step-num">6</span><div><span class="step-text">Avaliação registrada; servidor é notificado (por e-mail via PCK_COMUNICACAO)</span><div class="step-actor">💻 Sistema</div></div></div>
+        </div>
+      </div>
+      <div class="compare-col col-melhor">
+        <h4>Como poderia ser</h4>
+        <div class="steps">
+          <div class="step gestor"><span class="step-num">1</span><div><span class="step-text">Acessa "Homologação de equipe" — visão de fila com todos os servidores com pendências</span><div class="step-actor">👔 Gestor</div></div></div>
+          <div class="step system"><span class="step-num">2</span><div><span class="step-text">Sistema destaca quem está aguardando há mais tempo</span><div class="step-actor">💻 Sistema</div></div></div>
+          <div class="step gestor"><span class="step-num">3</span><div><span class="step-text">Abre o painel do servidor: comparação lado a lado do grau atribuído vs. grau requerido pelo nível</span><div class="step-actor">👔 Gestor</div></div></div>
+          <div class="step gestor"><span class="step-num">4</span><div><span class="step-text">Homologa com um clique, podendo adicionar comentário</span><div class="step-actor">👔 Gestor</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="issues-list">
+      <div class="issue-bug">
+        <span class="issue-id">E009</span>
+        <span><strong>Acesso inconsistente:</strong> a tela de homologação aparece no menu com perfil "GESTOR" em algumas entradas, mas com perfil "USUARIO" em outras. Um servidor comum poderia encontrar e acessar a tela de homologação indevidamente.</span>
+      </div>
+    </div>
+
+    <div class="opp-box">
+      <h4>💡 Oportunidade de melhoria</h4>
+      <p>Uma visão de "fila de homologação" (quantos servidores aguardam, há quanto tempo) seria muito mais útil do que a tela atual que exige selecionar um servidor por vez. Também seria válido mostrar o histórico de avaliações anteriores para embasar a decisão de homologar.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     F7 — DELEGAÇÃO
+════════════════════════════════════════════════════════ -->
+<div id="f7" class="flow-section">
+  <div class="flow-section-header">
+    <span class="flow-section-id actor-gestor">F7</span>
+    <div>
+      <div class="flow-section-title">Delegar a homologação para outro gestor</div>
+      <div class="flow-section-sub">👔 <strong>Ator:</strong> Gestor · 📋 <strong>Normativo:</strong> Art. 15 §2º, Portaria TCU 130/2023</div>
+    </div>
+  </div>
+  <div class="flow-section-body">
+    <p style="font-size:13px;color:#374151;margin-bottom:20px">
+      O Gestor pode delegar a responsabilidade de homologar as competências de sua equipe para outro servidor (geralmente um substituto ou par). A delegação é gerida na tela #49.
+    </p>
+
+    <div class="steps">
+      <div class="step gestor"><span class="step-num">1</span><div><span class="step-text">Acessa "Delegação de competência"</span><div class="step-actor">👔 Gestor — Tela #49</div></div></div>
+      <div class="step gestor"><span class="step-num">2</span><div><span class="step-text">Clica em "Criar nova delegação"</span><div class="step-actor">👔 Gestor</div></div></div>
+      <div class="step system"><span class="step-num">3</span><div><span class="step-text">Pop-up abre com formulário: selecionar o servidor que receberá a delegação</span><div class="step-actor">💻 Sistema — Modal #50</div></div></div>
+      <div class="step gestor"><span class="step-num">4</span><div><span class="step-text">Seleciona o servidor delegado e confirma</span><div class="step-actor">👔 Gestor</div></div></div>
+      <div class="step system"><span class="step-num">5</span><div><span class="step-text">Delegação registrada; servidor delegado passa a ter permissão de homologar</span><div class="step-actor">💻 Sistema</div></div></div>
+    </div>
+
+    <div class="issue-item issue-ok" style="margin-top:16px">
+      <span>✅ Este fluxo está correto e sem inconsistências identificadas.</span>
+    </div>
+
+    <div class="opp-box">
+      <h4>💡 Oportunidade de melhoria</h4>
+      <p>O sistema atual não deixa claro por quanto tempo a delegação é válida, nem envia notificação ao servidor que recebeu a delegação. Adicionar data de expiração e notificação por e-mail tornaria o processo mais controlado.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     F8 — EVIDÊNCIAS
+════════════════════════════════════════════════════════ -->
+<div id="f8" class="flow-section">
+  <div class="flow-section-header">
+    <span class="flow-section-id actor-usuario">F8</span>
+    <div>
+      <div class="flow-section-title">Submeter evidências para avançar de nível</div>
+      <div class="flow-section-sub">👤 <strong>Ator:</strong> Servidor · 📋 <strong>Normativo:</strong> Art. 18–22, Portaria TCU 130/2023</div>
+    </div>
+  </div>
+  <div class="flow-section-body">
+    <p style="font-size:13px;color:#374151;margin-bottom:20px">
+      Para avançar de <em>Fundamental</em> para <em>Profissional</em> (ou para <em>Especialista</em>), o servidor precisa comprovar que atende aos requisitos do próximo nível. Isso envolve registrar <strong>evidências</strong> (trabalhos, capacitações, experiências) e <strong>requisitos</strong> (critérios específicos da trajetória), e depois solicitar formalmente ao ISC.
+    </p>
+
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+flowchart TD
+  START["👤 Servidor decide\nque está pronto\npara o próximo nível"]
+  E1["Acessa 'Minhas Evidências'\n(Tela #18)"]
+  E2["Adiciona evidências:\n• Trabalhos de fiscalização\n• Ações educacionais\n• Experiências de liderança\n• Outras evidências"]
+  R1["Acessa 'Meus Requisitos'\n(Tela #66)\n— separa do restante!"]
+  R2["Registra cumprimento\ndos requisitos técnicos"]
+  SOL["Acessa 'Consultar Posição'\n→ 'Solicitar alcance de nível'\n(Tela #43 → Modal #83)"]
+  ISC["ISC recebe a solicitação\n(Fluxo F9)"]
+  START --> E1 --> E2 --> R1 --> R2 --> SOL --> ISC
+  style START fill:#DBEAFE,stroke:#2563EB
+  style ISC fill:#FFEDD5,stroke:#F97316
+  style SOL fill:#FEF9C3,stroke:#CA8A04
+      </div>
+    </div>
+
+    <div class="issues-list">
+      <div class="issue-warn">
+        <span class="issue-id">E029</span>
+        <span>As telas de evidências (<strong>#18 Minhas Evidências</strong>) e de requisitos (<strong>#66 Meus Requisitos</strong>) são <strong>separadas</strong>, obrigando o servidor a navegar para dois lugares diferentes para completar o mesmo objetivo. Além disso, a solicitação de nível está numa terceira tela (#43). O fluxo não é autoexplicativo.</span>
+      </div>
+    </div>
+
+    <div class="opp-box">
+      <h4>💡 Oportunidade de melhoria</h4>
+      <p><strong>Unificar as três telas</strong> em um único fluxo guiado "Avançar de nível" com etapas bem definidas: 1) Verificar requisitos → 2) Registrar evidências → 3) Solicitar avaliação do ISC. Uma checklist visual mostrando o que já está completo e o que falta tornaria muito mais claro o caminho para o servidor.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     F9 — ANÁLISE ISC
+════════════════════════════════════════════════════════ -->
+<div id="f9" class="flow-section">
+  <div class="flow-section-header">
+    <span class="flow-section-id actor-admin">F9</span>
+    <div>
+      <div class="flow-section-title">ISC analisa e decide sobre o pedido de nível</div>
+      <div class="flow-section-sub">🔧 <strong>Ator:</strong> ISC/Admin + 👔 Gestor · 📋 <strong>Normativo:</strong> Art. 23–25, Portaria TCU 130/2023</div>
+    </div>
+  </div>
+  <div class="flow-section-body">
+    <p style="font-size:13px;color:#374151;margin-bottom:20px">
+      O ISC analisa as evidências e requisitos submetidos pelo servidor (F8) e decide: <strong>Aprovado</strong> → servidor avança de nível (válido por até 3 anos) | <strong>Reprovado</strong> → servidor mantém o nível e reavaliar lacunas. O Gestor também tem um papel, mas não está claramente definido no sistema atual.
+    </p>
+
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+flowchart LR
+  A["🔧 ISC acessa\n'Homologar trajetória'\n(Tela #87)"]
+  B["Seleciona um\npedido pendente"]
+  C["Analisa as\nevidências e\nrequisitos"]
+  D{"Decisão"}
+  E["✅ Aprova:\nservidor avança\nde nível"]
+  F["❌ Reprova:\nservidor mantém\nnível e recebe feedback"]
+  G["Servidor é notificado\npor e-mail"]
+  A --> B --> C --> D
+  D -- Aprovado --> E --> G
+  D -- Reprovado --> F --> G
+  style A fill:#FFEDD5,stroke:#F97316
+  style E fill:#DCFCE7,stroke:#22C55E
+  style F fill:#FEF2F2,stroke:#EF4444
+      </div>
+    </div>
+
+    <div class="issues-list">
+      <div class="issue-bug" style="border-left:3px solid #DC2626">
+        <span class="issue-id">🔴 E028</span>
+        <span><strong>BUG CRÍTICO:</strong> A tela #42 "Consultar Posição" <strong>executa automaticamente a homologação/rejeição ao ser aberta</strong>, se vier com os parâmetros corretos na URL. Isso significa que um link enviado por e-mail com esses parâmetros homologa um pedido sem que o ISC precise clicar em nada. A abertura da página em si já é uma ação irreversível.</span>
+      </div>
+      <div class="issue-warn">
+        <span class="issue-id">E033</span>
+        <span>Não está claro qual é o papel do <strong>Gestor</strong> (tela #90 "Homologação") vs. o do <strong>ISC/Admin</strong> (tela #87) no processo de aprovação de nível. Os dois têm telas diferentes mas podem estar fazendo a mesma coisa.</span>
+      </div>
+    </div>
+
+    <div class="opp-box">
+      <h4>💡 Oportunidade de melhoria</h4>
+      <p>Separar claramente as responsabilidades: ISC analisa evidências → Gestor valida adequação ao espaço de atuação → ISC homologa formalmente. Cada etapa deve ter uma ação explícita (clique em botão), nunca ser disparada pela abertura de uma tela. O histórico de pedidos deve ser visível para todos os envolvidos.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     F10 — CONSULTAR POSIÇÃO
+════════════════════════════════════════════════════════ -->
+<div id="f10" class="flow-section">
+  <div class="flow-section-header">
+    <span class="flow-section-id actor-usuario">F10</span>
+    <div>
+      <div class="flow-section-title">Consultar minha posição na trajetória</div>
+      <div class="flow-section-sub">👤 <strong>Ator:</strong> Servidor · 📋 <strong>Normativo:</strong> Art. 5º, Portaria TCU 130/2023</div>
+    </div>
+  </div>
+  <div class="flow-section-body">
+    <p style="font-size:13px;color:#374151;margin-bottom:20px">
+      O servidor consulta em qual nível está em cada trajetória aderida (Fundamental, Profissional ou Especialista) e vê seu histórico de evidências, requisitos e avaliações.
+    </p>
+
+    <div class="steps">
+      <div class="step user"><span class="step-num">1</span><div><span class="step-text">Acessa "Consultar Posição" pelo menu</span><div class="step-actor">👤 Servidor — Tela #42</div></div></div>
+      <div class="step system"><span class="step-num">2</span><div><span class="step-text">Sistema exibe relatório hierárquico por unidade organizacional</span><div class="step-actor">💻 Sistema — consulta hierárquica Oracle</div></div></div>
+      <div class="step user"><span class="step-num">3</span><div><span class="step-text">Seleciona sua unidade/trajetória para ver os detalhes</span><div class="step-actor">👤 Servidor</div></div></div>
+      <div class="step system"><span class="step-num">4</span><div><span class="step-text">Exibe nível atual, data de homologação, evidências e requisitos</span><div class="step-actor">💻 Sistema — Tela #43 com mais detalhes</div></div></div>
+    </div>
+
+    <div class="issues-list">
+      <div class="issue-warn">
+        <span class="issue-id">E030</span>
+        <span>Existem <strong>duas telas com o mesmo nome</strong> "Consultar Posição" (#42 e #43). A tela #43 tem mais informações (evidências, requisitos, capacitações) mas <strong>não aparece no menu principal</strong> — o servidor a acessa sem perceber que existe uma versão mais completa.</span>
+      </div>
+      <div class="issue-warn">
+        <span class="issue-id">E031</span>
+        <span>Servidores da Trajetória de Liderança têm uma tela específica (#136 "Consultar posição liderança") que também <strong>não aparece no menu</strong>, sendo inacessível pela navegação normal.</span>
+      </div>
+    </div>
+
+    <div class="opp-box">
+      <h4>💡 Oportunidade de melhoria</h4>
+      <p>Um <strong>painel de desenvolvimento pessoal</strong> seria muito mais útil: progresso visual em cada trajetória (ex.: "Você está no Nível 2 — Profissional. 3 de 7 comportamentos avaliados para o Nível 3."), cronômetro de validade do nível atual, e próximos passos recomendados.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     F11 — CURADORIA
+════════════════════════════════════════════════════════ -->
+<div id="f11" class="flow-section">
+  <div class="flow-section-header">
+    <span class="flow-section-id actor-curador">F11</span>
+    <div>
+      <div class="flow-section-title">Curadorar objetos de aprendizagem</div>
+      <div class="flow-section-sub">📚 <strong>Ator:</strong> Curador · 📋 <strong>Normativo:</strong> Art. 28–31, Portaria TCU 130/2023</div>
+    </div>
+  </div>
+  <div class="flow-section-body">
+    <p style="font-size:13px;color:#374151;margin-bottom:20px">
+      Curadores de trajetória (servidores preferencialmente no nível Especialista, até 3 por trajetória) são responsáveis por identificar, propor e manter atualizados os <strong>objetos de aprendizagem</strong> (cursos, materiais, referências) associados a cada trajetória.
+    </p>
+
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+flowchart LR
+  A["📚 Curador acessa\n'Relatório de Competências'\n(Tela #29 — visível a todos)"]
+  B["Clica em\n'Curadoria Objetos'"]
+  C["🌐 Abre ISCNet2\nem nova aba\n(sistema externo TCU)"]
+  D["Gerencia objetos\nde aprendizagem\nno ISCNet2"]
+  E["❓ Como esses objetos\nvoltam para o\nTrajetórias?"]
+  A --> B --> C --> D
+  D -.->|"Integração\nnão documentada"| E
+  style C fill:#FEF9C3,stroke:#CA8A04
+  style E fill:#FEF2F2,stroke:#EF4444
+      </div>
+    </div>
+
+    <div class="issues-list">
+      <div class="issue-bug">
+        <span class="issue-id">E032</span>
+        <span><strong>A curadoria acontece em um sistema externo</strong> (ISCNet2) e não está documentado como os objetos de aprendizagem gerenciados lá ficam disponíveis no Sistema Trajetórias. Pode haver uma integração via banco de dados ou API que não foi mapeada, ou os dois sistemas podem estar desconectados.</span>
+      </div>
+    </div>
+
+    <div class="opp-box">
+      <h4>💡 Oportunidade de melhoria</h4>
+      <p>Documentar e, se necessário, implementar a integração entre ISCNet2 e Trajetórias. Idealmente, os objetos de aprendizagem associados a cada competência/trajetória seriam visíveis diretamente no Trajetórias (ex.: "Para desenvolver esta competência, veja esses materiais recomendados pelo Curador").</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     F12 — ADMINISTRAÇÃO
+════════════════════════════════════════════════════════ -->
+<div id="f12" class="flow-section">
+  <div class="flow-section-header">
+    <span class="flow-section-id actor-admin">F12</span>
+    <div>
+      <div class="flow-section-title">Administrar trajetórias e competências</div>
+      <div class="flow-section-sub">🔧 <strong>Ator:</strong> ISC/Admin · 📋 <strong>Normativo:</strong> Portaria TCU 130/2023 — gestão do sistema</div>
+    </div>
+  </div>
+  <div class="flow-section-body">
+    <p style="font-size:13px;color:#374151;margin-bottom:20px">
+      O ISC configura todo o conteúdo do sistema: quais trajetórias existem, quais competências e comportamentos compõem cada uma, quais requisitos precisam ser cumpridos por nível. Isso é feito por uma série de telas de cadastro.
+    </p>
+
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+flowchart TD
+  ADM["🔧 ISC Admin"]
+  ADM --> T["Gerenciar Trajetórias\n(Tela #5)\nCriar / Editar"]
+  ADM --> C["Gerenciar Competências\n(Tela #23)\nTécnicas, Pessoais, Liderança"]
+  ADM --> B["Gerenciar Comportamentos\n(Tela #21)\nPor competência"]
+  ADM --> R["Gerenciar Requisitos\n(Tela #74)\nPor nível de trajetória"]
+  T --> TN["Configurar Níveis\n(Tela #10 — sem menu!)"]
+  C --> CB["Associar comportamentos\na competências"]
+  B --> BN["Definir grau de entrega\nexigido por nível"]
+  R --> RA["Configurar critérios\nHCP / HDF / FOR"]
+  style TN fill:#FEF9C3,stroke:#CA8A04
+  style ADM fill:#FFEDD5,stroke:#F97316
+      </div>
+    </div>
+
+    <div class="issues-list">
+      <div class="issue-warn">
+        <span class="issue-id">⚠️</span>
+        <span>A tela de edição de trajetória (<strong>"Atualizar trajetória" — #10</strong>) só é acessível após clicar em "Criar" na tela #5. Ela <strong>não aparece no menu</strong>, então um Admin que não saiba dessa sequência pode não encontrá-la.</span>
+      </div>
+    </div>
+
+    <div class="opp-box">
+      <h4>💡 Oportunidade de melhoria</h4>
+      <p>Um <strong>painel de configuração unificado</strong> com estrutura de árvore (Trajetória → Níveis → Competências → Comportamentos → Requisitos) tornaria muito mais intuitivo entender e manter a estrutura do sistema. Hoje o Admin precisa navegar entre 5+ telas separadas sem uma visão da hierarquia completa.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Nota final ──────────────────────────────────────── -->
+<div style="background:#F1F5F9;border-radius:10px;padding:20px 24px;margin-top:8px;font-size:13px;color:#475569">
+  <strong>📌 Sobre este mapa:</strong> Os fluxos acima foram reconstruídos por engenharia reversa do Oracle APEX 18 a partir de 17 arquivos CSV exportados do sistema (Jun/2026). Conexões marcadas como "inferidas" se baseiam em análise contextual, pois os dados exportados não contêm todos os links gerados por Dynamic Actions. Erros identificados fazem referência ao arquivo <code>ERROS_ENCONTRADOS.md</code> (E001–E033).
+</div>
+
+</main>
+</div>
+
+<script>
+mermaid.initialize({ startOnLoad: true, theme: 'neutral',
+  flowchart: { curve: 'basis', padding: 20 },
+  themeVariables: { fontSize: '13px' }
+});
+
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const parent = btn.closest('.flow-section-body');
+    parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    parent.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    parent.querySelector('[data-tab="' + btn.dataset.target + '"]').classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
