@@ -9,7 +9,13 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
-_Funcionalidades em desenvolvimento ou planejadas para o próximo release._
+### Alterado
+- API (`packages/api`) migrada de HTTP nativo (JS) para **Fastify + TypeScript** rodando via `tsx`
+  - Estrutura modular: `src/app.ts`, `src/index.ts`, `src/prisma.ts`, `src/rotas/`
+  - CORS via plugin `@fastify/cors` (origens de `FRONTEND_ORIGINS` em produção)
+  - `tsconfig.json` em modo `strict`; script `typecheck` (`tsc --noEmit`)
+  - Testes com Vitest (`src/app.test.ts`) — rotas de saúde sem dependência de banco
+  - `start`: `prisma migrate deploy && node --import tsx src/index.ts`
 
 ---
 
