@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/index.js",
-    "start": "node src/index.js",
+    "start": "prisma migrate deploy && node src/index.js",
     "build": "prisma generate",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
-    "db:studio": "prisma studio"
+    "db:importar": "node seed/importar-todos.mjs"
   },
   "prisma": {
     "seed": "node prisma/seed.mjs"
@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "csv-parse": "^7.0.0",
     "prisma": "^5.22.0"
   }
 }

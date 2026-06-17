@@ -7,26 +7,142 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Estrutura ────────────────────────────────────────────────────────────────
+
 model Trajetoria {
-  cod               Int               @id
-  nome              String            @db.VarChar(200)
-  sigla             String            @db.VarChar(10)
-  sePublicadaSite   Boolean           @default(false)
-  dthoraIniVigencia DateTime          @db.Date
-  dthoraFimVigencia DateTime?         @db.Date
+  cod               Int                    @id
+  nome              String                 @db.VarChar(200)
+  sigla             String                 @db.VarChar(10)
+  sePublicadaSite   Boolean                @default(false)
+  dthoraIniVigencia DateTime               @db.Date
+  dthoraFimVigencia DateTime?              @db.Date
   niveis            TrajetoriaNivel[]
+  competencias      TrajetoriaCompetencia[]
+  espacos           TrajetoriaEspaco[]
+  pessoas           PessoaTrajetoria[]
 
   @@map("trajetoria")
 }
 
 model TrajetoriaNivel {
-  cod                Int        @id
+  cod                Int                    @id
   codTrajetoria      Int
   indNivelTrajetoria Int
-  descr              String     @db.Text
-  dthoraIniVigencia  DateTime   @db.Date
-  dthoraFimVigencia  DateTime?  @db.Date
-  trajetoria         Trajetoria @relation(fields: [codTrajetoria], references: [cod])
+  descr              String                 @db.Text
+  dthoraIniVigencia  DateTime               @db.Date
+  dthoraFimVigencia  DateTime?              @db.Date
+  trajetoria         Trajetoria             @relation(fields: [codTrajetoria], references: [cod])
+  pessoasNivel       PessoaTrajetoriaNivel[]
 
   @@map("trajetoria_nivel")
+}
+
+model Competencia {
+  cod               Int                    @id
+  indClassificacao  String?                @db.VarChar(1)
+  nome              String                 @db.VarChar(500)
+  descr             String?                @db.Text
+  sigla             String?                @db.VarChar(20)
+  seqApresentacao   Int?
+  dthoraIniVigencia DateTime               @db.Date
+  dthoraFimVigencia DateTime?              @db.Date
+  comportamentos    Comportamento[]
+  trajetorias       TrajetoriaCompetencia[]
+
+  @@map("competencia")
+}
+
+model Comportamento {
+  cod               Int                   @id
+  codCompetencia    Int
+  nome              String                @db.VarChar(500)
+  descr             String?               @db.Text
+  sigla             String?               @db.VarChar(20)
+  seqApresentacao   Int?
+  dthoraIniVigencia DateTime              @db.Date
+  dthoraFimVigencia DateTime?             @db.Date
+  competencia       Competencia           @relation(fields: [codCompetencia], references: [cod])
+  autoavaliacoes    PessoaAutoavaliacao[]
+
+  @@map("comportamento")
+}
+
+model TrajetoriaCompetencia {
+  cod               Int         @id
+  codTrajetoria     Int
+  codCompetencia    Int
+  seqApresentacao   Int?
+  dthoraIniVigencia DateTime    @db.Date
+  dthoraFimVigencia DateTime?   @db.Date
+  trajetoria        Trajetoria  @relation(fields: [codTrajetoria], references: [cod])
+  competencia       Competencia @relation(fields: [codCompetencia], references: [cod])
+
+  @@map("trajetoria_competencia")
+}
+
+model EspacoOcupacional {
+  cod         Int                @id
+  nome        String             @db.VarChar(200)
+  trajetorias TrajetoriaEspaco[]
+
+  @@map("espaco_ocupacional")
+}
+
+model TrajetoriaEspaco {
+  codEspaco     Int
+  codTrajetoria Int
+  espaco        EspacoOcupacional @relation(fields: [codEspaco], references: [cod])
+  trajetoria    Trajetoria        @relation(fields: [codTrajetoria], references: [cod])
+
+  @@id([codEspaco, codTrajetoria])
+  @@map("trajetoria_espaco")
+}
+
+// ─── Pessoas e dados transacionais ───────────────────────────────────────────
+
+model Pessoa {
+  codPessoaFisica Int                  @id
+  nomeAnonimizado String               @db.VarChar(50)
+  trajetorias     PessoaTrajetoria[]
+  autoavaliacoes  PessoaAutoavaliacao[]
+
+  @@map("pessoa")
+}
+
+model PessoaTrajetoria {
+  cod             Int                    @id
+  codPessoaFisica Int
+  codTrajetoria   Int
+  dataAdesao      DateTime?              @db.Date
+  pessoa          Pessoa                 @relation(fields: [codPessoaFisica], references: [codPessoaFisica])
+  trajetoria      Trajetoria             @relation(fields: [codTrajetoria], references: [cod])
+  niveis          PessoaTrajetoriaNivel[]
+
+  @@map("pessoa_trajetoria")
+}
+
+model PessoaTrajetoriaNivel {
+  cod                 Int              @id
+  codPessoaTrajetoria Int
+  codTrajetoriaNivel  Int
+  seHabilitado        Boolean          @default(false)
+  dataSolicitacao     DateTime?        @db.Date
+  dataAvaliacao       DateTime?        @db.Date
+  pessoaTrajetoria    PessoaTrajetoria @relation(fields: [codPessoaTrajetoria], references: [cod])
+  trajetoriaNivel     TrajetoriaNivel  @relation(fields: [codTrajetoriaNivel], references: [cod])
+
+  @@map("pessoa_trajetoria_nivel")
+}
+
+model PessoaAutoavaliacao {
+  cod             Int           @id
+  codPessoaFisica Int
+  codComportamento Int
+  grau            Int
+  seHomologado    Boolean       @default(false)
+  dataAvaliacao   DateTime?     @db.Date
+  pessoa          Pessoa        @relation(fields: [codPessoaFisica], references: [codPessoaFisica])
+  comportamento   Comportamento @relation(fields: [codComportamento], references: [cod])
+
+  @@map("pessoa_autoavaliacao")
 }

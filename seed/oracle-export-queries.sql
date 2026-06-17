@@ -120,14 +120,14 @@ ORDER BY EO.COD;
 -- CPF é OMITIDO propositalmente.
 -- -------------------------------------------------------------
 SELECT
-    U.COD                                   AS COD_USUARIO,
+    U.COD                               AS COD_USUARIO,
     U.COD_LOGIN,
     U.COD_PERFIL,
-    PT.COD_PESSOA_FISICA,
-    'Servidor ' || PT.COD_PESSOA_FISICA     AS NOME_ANONIMIZADO
+    U.COD                               AS COD_PESSOA_FISICA,
+    'Servidor ' || U.COD                AS NOME_ANONIMIZADO
 FROM AT_USUARIO U
-JOIN (
-    -- Pessoas ativas: avaliaram algo nos últimos 2 anos
+WHERE U.COD_APP = 'ATENA'
+  AND U.COD IN (
     SELECT DISTINCT PT2.COD_PESSOA_FISICA
     FROM AT_PESSOA_TRAJETORIA PT2
     JOIN AT_PESSOA_SUBCOMPETENCIA PSC
@@ -135,8 +135,7 @@ JOIN (
      AND PSC.DTHORA_FIM_VIGENCIA IS NULL
      AND PSC.DTHORA_CADASTRO >= ADD_MONTHS(SYSDATE, -24)
     WHERE PT2.DTHORA_FIM_VIGENCIA IS NULL
-) ATIVOS ON ATIVOS.COD_PESSOA_FISICA = U.COD_USUARIO
-WHERE U.COD_APP = 'ATENA'
+  )
 ORDER BY U.COD_LOGIN;
 
 -- Se BDSIAPE não estiver acessível, use esta versão simplificada:
