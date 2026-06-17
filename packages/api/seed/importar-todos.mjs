@@ -6,6 +6,11 @@
  *
  * No Docker (VPS):
  *   docker exec -e CSV_DIR=/tmp/csvs <container> node /app/seed/importar-todos.mjs
+ *
+ * Nota: os filtros de vigência das queries Oracle podem deixar registros
+ * "órfãos" (ex.: comportamento vigente cuja competência foi encerrada e não
+ * veio no Q03). O import filtra esses casos para não violar as FKs e reporta
+ * quantos foram ignorados.
  */
 
 import { readFileSync } from 'node:fs'
@@ -44,9 +49,12 @@ const toBool     = (v) => v === 'S' || v === 'true' || v === '1'
 const toBoolOpt  = (v) => v && String(v).trim() ? toBool(v) : false
 
 function em(n, total) {
-  const pct = Math.round(n / total * 100)
+  const pct = total ? Math.round(n / total * 100) : 100
   process.stdout.write(`\r   ${n}/${total} (${pct}%)`)
 }
+
+const sufixoIgnorados = (n, motivo) =>
+  n ? ` (${n} ignorados: ${motivo})` : ''
 
 // ─── Importações ─────────────────────────────────────────────────────────────
 
@@ -113,10 +121,18 @@ async function importarCompetencias() {
 async function importarComportamentos() {
   console.log('\n📂 Q04 — Comportamentos (1.197 registros)')
   const rows = lerCsv('q04_comportamentos.csv')
+
+  // Comportamento vigente pode apontar para competência não-vigente (fora do Q03).
+  const compsValidas = new Set(
+    (await prisma.competencia.findMany({ select: { cod: true } })).map((c) => c.cod),
+  )
+  const validos = rows.filter((r) => compsValidas.has(toIntReq(r.COD_COMPETENCIA)))
+  const ignorados = rows.length - validos.length
+
   const LOTE = 100
   let total = 0
-  for (let i = 0; i < rows.length; i += LOTE) {
-    const lote = rows.slice(i, i + LOTE)
+  for (let i = 0; i < validos.length; i += LOTE) {
+    const lote = validos.slice(i, i + LOTE)
     await prisma.comportamento.createMany({
       data: lote.map(r => ({
         cod:               toIntReq(r.COD),
@@ -131,16 +147,23 @@ async function importarComportamentos() {
       skipDuplicates: true,
     })
     total += lote.length
-    em(total, rows.length)
+    em(total, validos.length)
   }
-  console.log(`\n   ✅ ${rows.length} comportamentos`)
+  console.log(`\n   ✅ ${validos.length} comportamentos${sufixoIgnorados(ignorados, 'competência fora do recorte')}`)
 }
 
 async function importarTrajetoriaCompetencia() {
   console.log('\n📂 Q05 — Trajetória × Competência')
   const rows = lerCsv('q05_trajetoria_competencia.csv')
+
+  const compsValidas = new Set(
+    (await prisma.competencia.findMany({ select: { cod: true } })).map((c) => c.cod),
+  )
+  const validos = rows.filter((r) => compsValidas.has(toIntReq(r.COD_COMPETENCIA)))
+  const ignorados = rows.length - validos.length
+
   await prisma.trajetoriaCompetencia.createMany({
-    data: rows.map(r => ({
+    data: validos.map(r => ({
       cod:               toIntReq(r.COD),
       codTrajetoria:     toIntReq(r.COD_TRAJETORIA),
       codCompetencia:    toIntReq(r.COD_COMPETENCIA),
@@ -150,7 +173,7 @@ async function importarTrajetoriaCompetencia() {
     })),
     skipDuplicates: true,
   })
-  console.log(`   ✅ ${rows.length} vínculos`)
+  console.log(`   ✅ ${validos.length} vínculos${sufixoIgnorados(ignorados, 'competência fora do recorte')}`)
 }
 
 async function importarEspacos() {
@@ -211,8 +234,22 @@ async function importarPessoas() {
 async function importarNiveisPessoa() {
   console.log('\n📂 Q09 — Níveis por pessoa')
   const rows = lerCsv('q09_niveis_pessoa.csv')
+
+  const adesoesValidas = new Set(
+    (await prisma.pessoaTrajetoria.findMany({ select: { cod: true } })).map((p) => p.cod),
+  )
+  const niveisValidos = new Set(
+    (await prisma.trajetoriaNivel.findMany({ select: { cod: true } })).map((n) => n.cod),
+  )
+  const validos = rows.filter(
+    (r) =>
+      adesoesValidas.has(toIntReq(r.COD_PESSOA_TRAJETORIA)) &&
+      niveisValidos.has(toIntReq(r.COD_TRAJETORIA_NIVEL)),
+  )
+  const ignorados = rows.length - validos.length
+
   await prisma.pessoaTrajetoriaNivel.createMany({
-    data: rows.map(r => ({
+    data: validos.map(r => ({
       cod:                 toIntReq(r.COD),
       codPessoaTrajetoria: toIntReq(r.COD_PESSOA_TRAJETORIA),
       codTrajetoriaNivel:  toIntReq(r.COD_TRAJETORIA_NIVEL),
@@ -222,16 +259,30 @@ async function importarNiveisPessoa() {
     })),
     skipDuplicates: true,
   })
-  console.log(`   ✅ ${rows.length} registros`)
+  console.log(`   ✅ ${validos.length} registros${sufixoIgnorados(ignorados, 'adesão/nível fora do recorte')}`)
 }
 
 async function importarAutoavaliacoes() {
   console.log('\n📂 Q10 — Autoavaliações (2.058 registros)')
   const rows = lerCsv('q10_autoavaliacoes.csv')
+
+  const compsValidos = new Set(
+    (await prisma.comportamento.findMany({ select: { cod: true } })).map((c) => c.cod),
+  )
+  const pessoasValidas = new Set(
+    (await prisma.pessoa.findMany({ select: { codPessoaFisica: true } })).map((p) => p.codPessoaFisica),
+  )
+  const validos = rows.filter(
+    (r) =>
+      compsValidos.has(toIntReq(r.COD_COMPORTAMENTO)) &&
+      pessoasValidas.has(toIntReq(r.COD_PESSOA_FISICA)),
+  )
+  const ignorados = rows.length - validos.length
+
   const LOTE = 200
   let total = 0
-  for (let i = 0; i < rows.length; i += LOTE) {
-    const lote = rows.slice(i, i + LOTE)
+  for (let i = 0; i < validos.length; i += LOTE) {
+    const lote = validos.slice(i, i + LOTE)
     await prisma.pessoaAutoavaliacao.createMany({
       data: lote.map(r => ({
         cod:             toIntReq(r.COD),
@@ -244,9 +295,9 @@ async function importarAutoavaliacoes() {
       skipDuplicates: true,
     })
     total += lote.length
-    em(total, rows.length)
+    em(total, validos.length)
   }
-  console.log(`\n   ✅ ${rows.length} autoavaliações`)
+  console.log(`\n   ✅ ${validos.length} autoavaliações${sufixoIgnorados(ignorados, 'comportamento/pessoa fora do recorte')}`)
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
