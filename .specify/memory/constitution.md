@@ -10,6 +10,9 @@ Alterações: (1) portão de aprovação movido para CEDO (após /clarify, antes
   inegociáveis).
 Templates atualizados: nenhum impacto estrutural
 Pendências: nenhuma
+
+Patch 2.0.1: fluxo de ajuste (`ajuste-solicitado`) atualizado para o formato novo —
+  a IA sincroniza spec E corpo do Issue (antes só o spec); os dois nunca divergem.
 -->
 
 # Trajetórias 2.0 — Constituição
@@ -38,7 +41,7 @@ Cada Issue possui exatamente **1 label de status** por vez.
 | Label | Cor | Significado | Próximo passo |
 |-------|-----|-------------|---------------|
 | `aguardando-aprovacao` | 🟡 ouro | Spec criado pela IA; aguarda validação humana | Humano aprova ou pede ajuste |
-| `ajuste-solicitado` | 🔴 vermelho | Humano comentou pedindo mudanças | IA refaz a spec → volta para `aguardando-aprovacao` |
+| `ajuste-solicitado` | 🔴 vermelho | Humano comentou pedindo mudanças | IA refaz a spec **e o Issue** → volta para `aguardando-aprovacao` |
 | `aprovado` | 🔵 azul | Humano aprovou o spec | **Único gatilho** para desenvolvimento pela IA |
 | `em-implementacao` | 🟣 marinho | Agente IA iniciou desenvolvimento | IA finaliza e abre PR |
 | `concluido` | 🟢 verde | Implementação finalizada, PR mergeado | Fluxo encerrado |
@@ -47,7 +50,7 @@ Cada Issue possui exatamente **1 label de status** por vez.
 #### Regras de transição
 - Apenas **1 label de status** por vez — trocar sempre remove o anterior
 - `ajuste-solicitado` sempre substitui o label atual
-- Após a IA refazer a spec → volta para `aguardando-aprovacao`
+- Ajuste = a IA atualiza **o spec E o corpo do Issue** (no formato novo o humano aprova o Issue, não o spec) → volta para `aguardando-aprovacao`. Spec e Issue nunca devem divergir.
 - `aprovado` é o **único gatilho** para desenvolvimento
 - PR mergeado → label vira `concluido`
 
@@ -200,4 +203,4 @@ Closes #N
 - Versão PATCH: clarificações, redação, correções sem impacto semântico
 - Todo PR DEVE referenciar o Issue que fecha; PRs sem referência de Issue não são permitidos
 
-**Versão**: 2.0.0 | **Ratificado**: 2026-06-16 | **Última alteração**: 2026-06-17
+**Versão**: 2.0.1 | **Ratificado**: 2026-06-16 | **Última alteração**: 2026-06-17

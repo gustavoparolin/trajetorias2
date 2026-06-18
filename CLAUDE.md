@@ -71,13 +71,20 @@ O projeto opera em um de dois modos, definido **somente pelo owner**:
 10. Abrir PR com `Closes #N` no corpo (PR mergeado → GitHub fecha o Issue → label vira `concluido`)
 11. Não mergear — aguardar revisão do owner
 
-## Fluxo de ajuste de spec (quando label é `ajuste-solicitado`)
+## Fluxo de ajuste (quando label é `ajuste-solicitado`)
 
-1. Ler comentários do Issue para entender o que mudar
-2. Atualizar `specs/NNN-nome/spec.md`
-3. Comentar no Issue descrevendo o que foi ajustado
-4. Trocar label de `ajuste-solicitado` para `aguardando-aprovacao`
-5. Aguardar nova aprovação humana — não implementar ainda
+No formato novo, o humano revisa e aprova o **Issue (a história)** — então um ajuste precisa atualizar **o Issue E o spec**, mantendo os dois em sincronia.
+
+1. Ler os comentários do Issue (e o corpo, se o humano o reescreveu) para entender o que mudar
+2. Atualizar `specs/NNN-nome/spec.md` — a história e os critérios correspondentes
+3. Atualizar o **corpo do Issue** para refletir a mudança (regenerar via `speckit-storiestoissues` ou editar com `gh issue edit`) — o Issue é o que o humano relê para reaprovar
+4. Comentar no Issue descrevendo o que foi ajustado
+5. Trocar o label de `ajuste-solicitado` para `aguardando-aprovacao`
+6. Aguardar nova aprovação humana — não implementar ainda
+
+**Notas:**
+- O ajuste normalmente ocorre **antes** da aprovação (portão cedo), quando só existem spec + Issue — nada de plano/tarefas para sincronizar. Se o ajuste vier **depois** da aprovação (já há plano/tarefas/sub-issues), revisar também esses artefatos.
+- **Sincronia spec ↔ Issue:** se o humano **reescreveu o Issue** diretamente, reconciliar o `spec.md` a partir do Issue; se pediu por comentário, atualizar ambos. Os dois nunca devem divergir.
 
 ## Idioma
 
