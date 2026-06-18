@@ -21,8 +21,14 @@ jobs:
             exit 0
           fi
           echo "Acionando deploy no Coolify..."
-          curl -fsSL -X GET \
+          CODE=$(curl -s -o /tmp/resp -w "%{http_code}" -X GET \
             -H "Authorization: Bearer $TOKEN" \
-            "https://coolify.parolin.net/api/v1/deploy?uuid=d9uq7rgebjsvgf7v6l1n9n3w&force=false"
-          echo ""
-          echo "Deploy acionado."
+            -H "CF-Access-Client-Id: ${{ secrets.CF_ACCESS_CLIENT_ID }}" \
+            -H "CF-Access-Client-Secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}" \
+            "https://coolify.parolin.net/api/v1/deploy?uuid=d9uq7rgebjsvgf7v6l1n9n3w&force=false")
+          echo "HTTP $CODE"
+          if [ "$CODE" = "200" ]; then
+            echo "Deploy acionado."
+          else
+            echo "::warning::Coolify não aceitou a chamada (HTTP $CODE). Provável bloqueio do Cloudflare Access — configure um Service Token (CF_ACCESS_CLIENT_ID/SECRET) ou um Bypass no Access."
+          fi
