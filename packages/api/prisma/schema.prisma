@@ -98,6 +98,21 @@ model TrajetoriaEspaco {
   @@map("trajetoria_espaco")
 }
 
+// ─── Autenticação (usuários demo, seedados — não vêm do Oracle) ───────────────
+
+model Usuario {
+  id           Int       @id @default(autoincrement())
+  login        String    @unique @db.VarChar(50)
+  senhaHash    String
+  nome         String    @db.VarChar(120)
+  perfil       String    @db.VarChar(20) // USUARIO | GESTOR | ADMIN
+  chefeId      Int?
+  chefe        Usuario?  @relation("Hierarquia", fields: [chefeId], references: [id])
+  subordinados Usuario[] @relation("Hierarquia")
+
+  @@map("usuario")
+}
+
 // ─── Pessoas e dados transacionais ───────────────────────────────────────────
 
 model Pessoa {
