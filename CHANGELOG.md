@@ -9,6 +9,11 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+### Adicionado
+- **Autenticação demo** (#3, História P1): modelo `Usuario`, seed dos 6 usuários demo, `POST /login` (JWT), `GET /eu`, `GET /usuarios-demo` — 8 testes Vitest
+- **Pipeline de skills** spec-kit: `check-issues` (orquestrador) → `implement` → `peer-review` → `qa`, com skill `storiestoissues` (Issue-pai = história) e portão de aprovação cedo
+- **Deploy automático no Coolify** via GitHub Action a cada push na `main` (substitui o auto-deploy do GitHub App que parou de funcionar)
+
 ### Alterado
 - API (`packages/api`) migrada de HTTP nativo (JS) para **Fastify + TypeScript** rodando via `tsx`
   - Estrutura modular: `src/app.ts`, `src/index.ts`, `src/prisma.ts`, `src/rotas/`
