@@ -56,9 +56,15 @@ O projeto opera em um de dois modos, definido **somente pelo owner**:
 
 ## Fluxo de implementação (steps obrigatórios)
 
-1. Verificar Issues com label `aprovado` em `github.com/gustavoparolin/trajetorias2`
-2. Escolher o Issue de maior prioridade (menor número ou milestone mais próximo)
-3. Trocar label para `em-implementacao` (remover `aprovado`)
+Ao acionar `/implement`, o agente **varre os Issues abertos** em duas fases:
+- **Fase 1 — `ajuste-solicitado`:** reescreve (spec + corpo do Issue → `aguardando-aprovacao`, ver "Fluxo de ajuste"). Não implementa.
+- **Fase 2 — implementar:** em ordem de prioridade e dependência, **um por vez**.
+
+Para cada Issue da Fase 2:
+
+1. Selecionar o conjunto a implementar: em `MODO_CONTROLADO`, Issues `aprovado`; em `MODO_AUTONOMO`, também `aguardando-aprovacao` (portão dispensado)
+2. Escolher o de maior prioridade (P1→P2→P3, depois menor número), **respeitando dependências** (dependência antes do dependente)
+3. Trocar label para `em-implementacao` (remover o label anterior)
 4. Garantir os artefatos da spec antes de codar:
    - Se **não existir** `specs/NNN-nome/spec.md` (Caminho B): criar a spec a partir do Issue
    - Rodar `/speckit-plan` e `/speckit-tasks` se `plano.md`/`tarefas.md` ainda não existirem
@@ -69,7 +75,8 @@ O projeto opera em um de dois modos, definido **somente pelo owner**:
 9. Executar: `npx playwright test` → corrigir se falhar
    - Se algum teste falhar após tentativas de correção: trocar label para `falha-ia`, parar e informar o usuário
 10. Abrir PR com `Closes #N` no corpo (PR mergeado → GitHub fecha o Issue → label vira `concluido`)
-11. Não mergear — aguardar revisão do owner
+11. `MODO_CONTROLADO`: não mergear — aguardar revisão do owner. `MODO_AUTONOMO`: pode mergear o próprio PR se os testes passarem
+12. Voltar à Fase 2 e processar o próximo Issue, até esgotar a fila
 
 ## Fluxo de ajuste (quando label é `ajuste-solicitado`)
 
