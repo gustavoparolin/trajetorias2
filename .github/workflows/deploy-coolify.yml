@@ -1,0 +1,28 @@
+name: Deploy no Coolify (push → main)
+
+# Dispara o deploy da API no Coolify a cada push na main, via a API de deploy
+# do Coolify. Substitui o auto-deploy do GitHub App (que parou de funcionar).
+# Requer o secret COOLIFY_TOKEN (token de API do Coolify com permissão de deploy).
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  disparar-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acionar deploy da API
+        env:
+          TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::warning::COOLIFY_TOKEN não configurado — pulando o deploy automático."
+            exit 0
+          fi
+          echo "Acionando deploy no Coolify..."
+          curl -fsSL -X GET \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://coolify.parolin.net/api/v1/deploy?uuid=d9uq7rgebjsvgf7v6l1n9n3w&force=false"
+          echo ""
+          echo "Deploy acionado."
