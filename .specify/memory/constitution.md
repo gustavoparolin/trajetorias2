@@ -13,6 +13,11 @@ Pendências: nenhuma
 
 Patch 2.0.1: fluxo de ajuste (`ajuste-solicitado`) atualizado para o formato novo —
   a IA sincroniza spec E corpo do Issue (antes só o spec); os dois nunca divergem.
+
+Versão 2.1.0: pipeline pós-aprovação com 4 skills focados — check-issues (orquestrador,
+  ponto de entrada) → implement → peer-review → qa → merge. Labels enxutas (review/qa
+  dentro de em-implementacao). Consciente do modo (controlado: humano revisa/mergeia;
+  autônomo: IA auto-revisa, QA e mergeia). Gates do Princípio III seguem inegociáveis.
 -->
 
 # Trajetórias 2.0 — Constituição
@@ -144,23 +149,25 @@ Caminho A — Spec-First:
 2. /speckit-clarify          → resolve ambiguidades na spec
 3. /speckit-storiestoissues  → cria Issue-pai (história) no GitHub, human-ready
    ── ⛔ PORTÃO: responsável revisa e adiciona label `aprovado` ──
-4. /speckit-plan             → cria specs/NNN-nome/plano.md (agora entra a stack)
-5. /speckit-tasks            → cria specs/NNN-nome/tarefas.md
-6. /speckit-analyze          → consistência entre spec/plano/tarefas (opcional)
-7. /speckit-taskstoissues    → cria sub-issues (filhas) ligadas ao Issue-pai
-8. /speckit-implement        → agente implementa, testa, abre PR
-9. Responsável revisa PR → mergeia → Issue fecha
+4. /speckit-check-issues     → orquestra o pós-aprovação (ver "Pipeline" abaixo)
 
 Caminho B — Issue-First:
 1. Membro do time cria Issue manualmente no GitHub descrevendo o que quer
    ── ⛔ PORTÃO: responsável adiciona label `aprovado` ──
-2. IA detecta Issue aprovado SEM spec → cria specs/NNN-nome/spec.md a partir do Issue
-3. /speckit-plan → /speckit-tasks → /speckit-implement (implementa, testa, abre PR)
-4. Responsável revisa PR → mergeia → Issue fecha
+2. /speckit-check-issues     → detecta Issue aprovado SEM spec → cria a spec → orquestra
 ```
 
-Em ambos os caminhos, o **portão de aprovação vem antes** de plano/tarefas/implementação.
-O agente DEVE varrer os Issues `aprovado` e, se não houver spec correspondente em `specs/`, **criá-la antes** de prosseguir (Caminho B).
+**Pipeline (orquestrado por `/speckit-check-issues`, drive-to-done, um Issue por vez):**
+```
+em-implementacao → speckit-implement (código+testes+PR)
+                 → speckit-peer-review (revisa)
+                 → speckit-qa (gates + critérios de aceite)
+                 → merge → concluido
+```
+- **Labels enxutas:** peer-review e QA rodam **dentro** do ciclo `em-implementacao` — não há `em-revisao`/`em-qa`.
+- **Consciente do modo:** em MODO_CONTROLADO os skills geram relatórios e o **humano** revisa/mergeia; em MODO_AUTONOMO a IA auto-revisa, roda QA e **mergeia** se passar.
+- Em ambos os caminhos o **portão vem antes** do trabalho técnico. O agente DEVE varrer os Issues `aprovado` e, se faltar spec em `specs/`, **criá-la antes** de prosseguir (Caminho B).
+- Os 4 skills do pipeline: `check-issues` (orquestra) · `implement` · `peer-review` · `qa`.
 
 ### Nomenclatura de branches
 ```
@@ -203,4 +210,4 @@ Closes #N
 - Versão PATCH: clarificações, redação, correções sem impacto semântico
 - Todo PR DEVE referenciar o Issue que fecha; PRs sem referência de Issue não são permitidos
 
-**Versão**: 2.0.1 | **Ratificado**: 2026-06-16 | **Última alteração**: 2026-06-17
+**Versão**: 2.1.0 | **Ratificado**: 2026-06-16 | **Última alteração**: 2026-06-17

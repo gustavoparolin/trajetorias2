@@ -1,6 +1,6 @@
 ---
 name: "speckit-implement"
-description: "Sweep open GitHub issues by status label and process all pending work: rewrite ajuste-solicitado issues (sync spec + issue body, return to aguardando-aprovacao) and implement approved issues in priority/dependency order, with quality gates and a PR per issue. Mode-aware (MODO_CONTROLADO / MODO_AUTONOMO). Per-issue execution follows tasks.md."
+description: "Implement ONE feature: execute the tasks in tasks.md (code + tests), run the quality gates, and open a PR with Closes #N. Single-responsibility — does not sweep issues, review, or merge; that orchestration lives in speckit-check-issues."
 argument-hint: "Optional implementation guidance or task filter"
 compatibility: "Requires spec-kit project structure with .specify/ directory"
 metadata:
@@ -54,46 +54,9 @@ You **MUST** consider the user input before proceeding (if not empty).
     ```
 - If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
 
-## Sweep — triage open issues by status label (ENTRY POINT)
+> **Scope:** this skill implements a **single feature** whose `spec.md`, `plano.md` and `tarefas.md` already exist. It executes the tasks, runs the quality gates, and opens a PR with `Closes #N`. It does **not** sweep issues, manage status labels, peer-review, run QA, or merge — that is the job of `speckit-check-issues`, which calls this skill. If invoked standalone, it builds the current feature and opens the PR.
 
-When invoked, this skill does **not** assume a single feature. It **sweeps the open issues** and processes whatever is pending, in two phases. First, determine the **operation mode** by reading the "Modo de operação" section of `CLAUDE.md` (default: `MODO_CONTROLADO`).
-
-List open issues with their labels:
-
-```bash
-gh issue list --state open --json number,title,labels
-```
-
-### Phase 1 — `ajuste-solicitado` (rewrite, do NOT implement)
-
-For each issue labeled `ajuste-solicitado`, run the **adjustment flow** (see `CLAUDE.md` › "Fluxo de ajuste"):
-1. Read the comments (and the issue body, if the human rewrote it).
-2. Update `specs/NNN-nome/spec.md` **and** the issue body (via `speckit-storiestoissues` or `gh issue edit`) — keep them in sync.
-3. Comment describing what was adjusted.
-4. Switch the label to `aguardando-aprovacao`.
-
-These issues are **not** implemented this run — they return to awaiting human approval.
-
-### Phase 2 — implement (in priority + dependency order)
-
-The set to implement depends on the mode:
-- **MODO_CONTROLADO**: issues labeled `aprovado`.
-- **MODO_AUTONOMO**: issues labeled `aprovado` **or** `aguardando-aprovacao` (the human gate is waived).
-
-Order by priority (P1 → P2 → P3, then lowest issue number) and **respect dependencies** — never implement an issue that depends on another not yet delivered; do the dependency first. For **each** issue, run the **Per-issue implementation** subroutine below, **one at a time**:
-- Switch the label to `em-implementacao` (remove the previous status label).
-- Ensure artifacts: if `spec.md` is missing (Caminho B), create it from the issue; run `/speckit-plan` and `/speckit-tasks` if `plano.md` / `tarefas.md` are missing.
-- Create branch `feat/issue-N-...`, implement, run the quality gates (typecheck + Vitest + Playwright).
-- Open a PR with `Closes #N`.
-- **MODO_CONTROLADO**: do **not** merge — wait for the owner's review.
-- **MODO_AUTONOMO**: may merge its own PR if the tests pass.
-- If a test fails without a fix: switch the label to `falha-ia`, stop, and report.
-
-If nothing is pending in either phase, report "nada pendente" and finish.
-
-> The subroutine below ("Outline") details the execution for **one** issue/feature. It is run once per Phase 2 issue.
-
-## Outline (Per-issue implementation subroutine — runs once per Phase 2 issue)
+## Outline
 
 1. Run `.specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` from repo root and parse FEATURE_DIR and AVAILABLE_DOCS list. All paths must be absolute. For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
 
@@ -257,10 +220,9 @@ Report final status with summary of completed work.
 
 ## Done When
 
-- [ ] Sweep ran: open issues triaged by status label, operation mode determined from `CLAUDE.md`
-- [ ] Phase 1: every `ajuste-solicitado` issue had its spec + issue body synced and was returned to `aguardando-aprovacao`
-- [ ] Phase 2: every implementable issue (per mode) was processed in priority/dependency order, one at a time
-- [ ] For each implemented issue: tasks in tasks.md completed and marked `[X]`, quality gates pass, PR opened with `Closes #N` (merged only in MODO_AUTONOMO)
+- [ ] All tasks in tasks.md completed and marked `[X]`
+- [ ] Quality gates pass (typecheck + Vitest + Playwright)
+- [ ] PR opened with `Closes #N` (this skill does not merge — that is the caller's decision)
 - [ ] Implementation validated against specification, plan, and test coverage
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
-- [ ] Completion reported to user with a summary per issue (what was implemented / rewritten / skipped)
+- [ ] Completion reported to user with summary of completed work

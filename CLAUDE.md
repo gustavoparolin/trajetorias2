@@ -54,29 +54,28 @@ O projeto opera em um de dois modos, definido **somente pelo owner**:
 
 **Regra:** apenas 1 label de status por vez. Trocar sempre remove o anterior.
 
-## Fluxo de implementação (steps obrigatórios)
+## Fluxo de implementação — orquestrado por `/speckit-check-issues`
 
-Ao acionar `/implement`, o agente **varre os Issues abertos** em duas fases:
-- **Fase 1 — `ajuste-solicitado`:** reescreve (spec + corpo do Issue → `aguardando-aprovacao`, ver "Fluxo de ajuste"). Não implementa.
-- **Fase 2 — implementar:** em ordem de prioridade e dependência, **um por vez**.
+O **ponto de entrada** é `/speckit-check-issues`. Ele varre os Issues abertos e **delega** para os skills focados (não coda nada por si). Pipeline: `implement → peer-review → qa → merge`.
 
-Para cada Issue da Fase 2:
+**Fase 1 — `ajuste-solicitado`:** reescreve (spec + corpo do Issue → `aguardando-aprovacao`, ver "Fluxo de ajuste"). Não implementa.
 
-1. Selecionar o conjunto a implementar: em `MODO_CONTROLADO`, Issues `aprovado`; em `MODO_AUTONOMO`, também `aguardando-aprovacao` (portão dispensado)
-2. Escolher o de maior prioridade (P1→P2→P3, depois menor número), **respeitando dependências** (dependência antes do dependente)
-3. Trocar label para `em-implementacao` (remover o label anterior)
-4. Garantir os artefatos da spec antes de codar:
-   - Se **não existir** `specs/NNN-nome/spec.md` (Caminho B): criar a spec a partir do Issue
-   - Rodar `/speckit-plan` e `/speckit-tasks` se `plano.md`/`tarefas.md` ainda não existirem
-5. Criar branch: `feat/issue-N-descricao-curta`
-6. Implementar conforme spec e critérios de aceite do Issue
-7. Executar: `npm run typecheck` → corrigir se falhar
-8. Executar: `npm test` → corrigir se falhar
-9. Executar: `npx playwright test` → corrigir se falhar
-   - Se algum teste falhar após tentativas de correção: trocar label para `falha-ia`, parar e informar o usuário
-10. Abrir PR com `Closes #N` no corpo (PR mergeado → GitHub fecha o Issue → label vira `concluido`)
-11. `MODO_CONTROLADO`: não mergear — aguardar revisão do owner. `MODO_AUTONOMO`: pode mergear o próprio PR se os testes passarem
-12. Voltar à Fase 2 e processar o próximo Issue, até esgotar a fila
+**Fase 2 — drive-to-done (um Issue por vez):**
+1. Conjunto: `MODO_CONTROLADO` → Issues `aprovado`; `MODO_AUTONOMO` → também `aguardando-aprovacao` (portão dispensado)
+2. Ordem: prioridade (P1→P2→P3, depois menor número), **respeitando dependências**
+3. `em-implementacao` (remove o label anterior)
+4. Garantir artefatos: criar `spec.md` se faltar (Caminho B); rodar `/speckit-plan` + `/speckit-tasks` se faltarem
+5. **`speckit-implement`** → código + testes + PR com `Closes #N`
+6. **`speckit-peer-review`** → revisa o PR
+7. **`speckit-qa`** → roda os gates + valida cada critério de aceite
+8. **Merge:** `MODO_CONTROLADO` → não mergeia; deixa o PR + relatórios para o owner. `MODO_AUTONOMO` → mergeia se review aprovou e QA passou (→ `concluido`)
+9. Falha sem conserto em qualquer etapa → `falha-ia`, para esse Issue e segue para o próximo
+
+**Labels enxutas:** não há `em-revisao`/`em-qa` — peer-review e QA rodam **dentro** do ciclo `em-implementacao`. Ciclo de vida: `aprovado → em-implementacao → concluido` (+ `ajuste-solicitado`, `falha-ia`).
+
+**Quality gates (Princípio III — inegociável em TODO modo):** `npm run typecheck`, `npm test`, `npx playwright test`. Nunca `--no-verify`.
+
+**Os 4 skills:** `check-issues` (orquestra) · `implement` (um feature + PR) · `peer-review` (revisa) · `qa` (valida critérios + gates).
 
 ## Fluxo de ajuste (quando label é `ajuste-solicitado`)
 
@@ -170,13 +169,12 @@ trajetorias2/
 /speckit-specify → /speckit-clarify
 → /speckit-storiestoissues          (cria Issue-pai = história, human-ready)
 → ⛔ owner adiciona label `aprovado`  (PORTÃO, antes do trabalho técnico)
-→ /speckit-plan → /speckit-tasks → /speckit-analyze (opcional)
-→ /speckit-taskstoissues            (cria sub-issues filhas, ligadas ao pai)
-→ /speckit-implement
+→ /speckit-check-issues             (orquestra: plan → tasks → implement → peer-review → qa → merge)
 ```
 
 - `speckit-storiestoissues`: **spec.md → Issue-pai por história** (para o humano aprovar).
-- `speckit-taskstoissues`: **tarefas.md → sub-issues filhas** (para o agente implementar), após a aprovação.
+- `speckit-check-issues`: **orquestrador** pós-aprovação — garante plano/tarefas e dispara implement → peer-review → qa → merge (drive-to-done, consciente do modo).
+- `speckit-taskstoissues`: **tarefas.md → sub-issues filhas** — opcional, para visibilidade da quebra técnica.
 - Nomes de skills usam hífen no Claude Code (`/speckit-*`). O agente nunca aplica `aprovado` — é gatilho exclusivo do humano.
 
 ## Referências
