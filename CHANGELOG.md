@@ -11,6 +11,8 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 - **Autenticação demo** (#3, História P1): modelo `Usuario`, seed dos 6 usuários demo, `POST /login` (JWT), `GET /eu`, `GET /usuarios-demo` — 8 testes Vitest
+- **Frontend de login** (#3): `packages/web` (Vite + React 18 + TS + Tailwind 4), store Zustand, página de login com painel demo (clique-preenche), dashboard com nome no header e "Trocar usuário", proteção de rota
+- **Testes E2E** Playwright (`e2e/login.spec.ts`): login servidor, senha errada, painel demo, rota protegida
 - **Pipeline de skills** spec-kit: `check-issues` (orquestrador) → `implement` → `peer-review` → `qa`, com skill `storiestoissues` (Issue-pai = história) e portão de aprovação cedo
 - **Deploy automático no Coolify** via GitHub Action a cada push na `main` (substitui o auto-deploy do GitHub App que parou de funcionar)
 
