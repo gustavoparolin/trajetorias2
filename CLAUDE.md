@@ -9,19 +9,37 @@ Estas instruções têm precedência sobre qualquer comportamento padrão.
 
 Existem dois caminhos válidos para chegar à implementação:
 
+O **portão de aprovação vem cedo**: o humano aprova a história (o quê e por quê) **antes** de plano/tarefas/implementação. Nada de planejar o que pode ser rejeitado.
+
 ### Caminho A — Spec-First (time técnico)
-1. Rodar `/speckit.specify` para criar a spec
-2. Rodar os steps seguintes até `/speckit.taskstoissues` criar os Issues
-3. Owner adiciona label `aprovado` ao Issue
-4. Agente implementa
+1. Rodar `/speckit-specify` → `/speckit-clarify` para criar e refinar a spec
+2. Rodar `/speckit-storiestoissues` → cria o Issue-pai (história) human-ready
+3. Owner adiciona label `aprovado` ao Issue-pai  ← **portão (cedo)**
+4. Agente roda `/speckit-plan` → `/speckit-tasks` → `/speckit-taskstoissues` (sub-issues filhas) → implementa
 
 ### Caminho B — Issue-First (qualquer membro do time)
-1. Humano cria Issue no GitHub descrevendo o que quer
-2. Owner adiciona label `aprovado` ao Issue
-3. Agente lê o Issue, **cria a spec** em `specs/NNN-nome/spec.md`
-4. Agente implementa seguindo a spec gerada
+1. Humano cria Issue manualmente no GitHub descrevendo o que quer
+2. Owner adiciona label `aprovado` ao Issue  ← **portão (cedo)**
+3. Agente **detecta** o Issue aprovado SEM spec → **cria a spec** em `specs/NNN-nome/spec.md` a partir do Issue
+4. Agente roda `/speckit-plan` → `/speckit-tasks` → implementa seguindo a spec gerada
 
 **Em ambos os casos: sem label `aprovado` → agente para e informa o usuário.**
+**Sempre que houver um Issue `aprovado` sem spec correspondente em `specs/`, o agente DEVE criar a spec antes de planejar ou implementar.**
+
+> A regra acima vale em **MODO_CONTROLADO**. Em **MODO_AUTONOMO**, o portão é dispensado — veja abaixo.
+
+## Modo de operação
+
+O projeto opera em um de dois modos, definido **somente pelo owner**:
+
+- **MODO_CONTROLADO** (padrão): vale o portão de aprovação descrito acima — a IA só implementa Issues com label `aprovado`.
+- **MODO_AUTONOMO**: o owner concede autonomia total. A IA conduz o fluxo inteiro (spec → clarify → plano → tarefas → implementação → PR → **merge**) **sem esperar** o label `aprovado`. As specs continuam sendo criadas, para rastro; a IA aprova a si mesma.
+
+**Modo atual: `MODO_CONTROLADO`**
+
+- O owner ativa/desativa explicitamente — alterando a linha "Modo atual" acima, ou instruindo na sessão. Pode valer desde o início, a partir de um ponto (ex.: "a partir do Issue #N") ou por escopo (ex.: "Sprint 1").
+- Mesmo em `MODO_AUTONOMO`, os quality gates seguem **obrigatórios**: `npm run typecheck`, `npm test` e `npx playwright test` DEVEM passar antes de qualquer merge. Autonomia remove o portão humano, não os testes.
+- Em `MODO_AUTONOMO`, a IA pode mergear o próprio PR; se um teste falhar sem conserto, troca o label para `falha-ia`, para e informa o owner.
 
 ## Ciclo de vida de um Issue (labels de status)
 
@@ -41,7 +59,9 @@ Existem dois caminhos válidos para chegar à implementação:
 1. Verificar Issues com label `aprovado` em `github.com/gustavoparolin/trajetorias2`
 2. Escolher o Issue de maior prioridade (menor número ou milestone mais próximo)
 3. Trocar label para `em-implementacao` (remover `aprovado`)
-4. Se não existir spec: criar `specs/NNN-nome/spec.md` a partir do Issue
+4. Garantir os artefatos da spec antes de codar:
+   - Se **não existir** `specs/NNN-nome/spec.md` (Caminho B): criar a spec a partir do Issue
+   - Rodar `/speckit-plan` e `/speckit-tasks` se `plano.md`/`tarefas.md` ainda não existirem
 5. Criar branch: `feat/issue-N-descricao-curta`
 6. Implementar conforme spec e critérios de aceite do Issue
 7. Executar: `npm run typecheck` → corrigir se falhar
@@ -130,13 +150,20 @@ trajetorias2/
 └── tasks/            PRD e task lists de alto nível
 ```
 
-## Spec-kit workflow (Caminho A)
+## Spec-kit workflow (Caminho A) — portão de aprovação cedo
 
 ```
-/speckit.specify → /speckit.clarify → /speckit.checklist
-→ /speckit.plan → /speckit.tasks → /speckit.taskstoissues
-→ (owner adiciona label aprovado) → /speckit.implement
+/speckit-specify → /speckit-clarify
+→ /speckit-storiestoissues          (cria Issue-pai = história, human-ready)
+→ ⛔ owner adiciona label `aprovado`  (PORTÃO, antes do trabalho técnico)
+→ /speckit-plan → /speckit-tasks → /speckit-analyze (opcional)
+→ /speckit-taskstoissues            (cria sub-issues filhas, ligadas ao pai)
+→ /speckit-implement
 ```
+
+- `speckit-storiestoissues`: **spec.md → Issue-pai por história** (para o humano aprovar).
+- `speckit-taskstoissues`: **tarefas.md → sub-issues filhas** (para o agente implementar), após a aprovação.
+- Nomes de skills usam hífen no Claude Code (`/speckit-*`). O agente nunca aplica `aprovado` — é gatilho exclusivo do humano.
 
 ## Referências
 
